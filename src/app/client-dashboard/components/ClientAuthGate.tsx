@@ -1,0 +1,285 @@
+'use client';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Eye, EyeOff, LogIn, UserPlus, Mail, Lock, MapPin } from 'lucide-react';
+import AppLogo from '@/components/ui/AppLogo';
+
+import {
+  LOCATIONS,
+  ClientProfile,
+} from '@/lib/mockData';
+import { useAppStore } from '@/lib/AppContext';
+
+interface AuthGateProps {
+  onAuth: (email: string) => void;
+}
+
+type Mode = 'login' | 'register';
+
+interface LoginForm {
+  email: string;
+  password: string;
+}
+
+interface RegisterForm {
+  name: string;
+  businessName: string;
+  email: string;
+  password: string;
+  road: string;
+  location: string;
+  subLocation: string;
+}
+
+export default function ClientAuthGate({ onAuth }: AuthGateProps) {
+  const { clients, addClient, roads } = useAppStore();
+  const [mode, setMode] = useState<Mode>('login');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [registeredUrl, setRegisteredUrl] = useState<string | null>(null);
+
+  const loginForm = useForm<LoginForm>();
+  const registerForm = useForm<RegisterForm>();
+
+  const handleLoginSubmit = (data: LoginForm) => {
+    setLoading(true);
+    setAuthError('');
+    setTimeout(() => {
+      const match = clients.find(
+        (c) => c.email.toLowerCase() === data.email.toLowerCase() && c.password === data.password
+      );
+      if (match) {
+        onAuth(match.email);
+      } else {
+        setAuthError('Incorrect email or password. Please try again.');
+      }
+      setLoading(false);
+    }, 700);
+  };
+
+  const handleRegisterSubmit = (data: RegisterForm) => {
+    setLoading(true);
+    setTimeout(() => {
+      const existing = clients.find((c) => c.email.toLowerCase() === data.email.toLowerCase());
+      if (existing) {
+        registerForm.setError('email', { message: 'This email is already registered. Please sign in.' });
+        setLoading(false);
+        return;
+      }
+
+      const maxId = Math.max(...clients.map((c) => c.numericId), 0);
+      const newNumericId = maxId + 1;
+      const newId = `client-${String(newNumericId).padStart(3, '0')}`;
+
+      const selectedLoc = LOCATIONS.find((l) => l.name === data.location);
+      const county = selectedLoc?.area || data.location;
+
+      const newClient: ClientProfile = {
+        id: newId,
+        numericId: newNumericId,
+        name: data.name,
+        businessName: data.businessName,
+        email: data.email,
+        password: data.password,
+        phone: '',
+        county,
+        road: data.road || '',
+        location: data.location,
+        subLocation: data.subLocation || data.location,
+        description: '',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+        avatarAlt: `${data.name} profile photo`,
+        media: [],
+        uploadLimit: 3,
+        status: 'active' as const,
+        hidden: false,
+        featured: false,
+        featuredOrder: null,
+        joinedDate: new Date().toISOString().split('T')[0],
+        categories: [],
+        views: 0,
+      };
+
+      addClient(newClient);
+
+      const slugify = (str: string) =>
+        str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const profileUrl = `/${slugify(county)}/${slugify(data.road || 'main-road')}/${slugify(data.businessName)}/${slugify(data.subLocation || data.location)}/${newNumericId}`;
+      setRegisteredUrl(profileUrl);
+
+      setLoading(false);
+      onAuth(data.email);
+    }, 1000);
+  };
+
+  return (
+    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--background)' }}>
+      {/* Left panel */}
+      <div className="hidden lg:flex lg:w-1/2 hero-gradient flex-col justify-between p-12 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 70%, #F5A623 0%, transparent 60%)' }} />
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-12">
+            <AppLogo size={40} />
+            <span className="text-2xl font-bold" style={{ color: '#FAF8F5' }}>FurniMarket</span>
+          </div>
+          <h2 className="text-4xl font-bold leading-tight mb-4" style={{ color: '#FAF8F5' }}>
+            Grow your furniture<br />business online
+          </h2>
+          <p className="text-lg" style={{ color: 'rgba(250,248,245,0.7)' }}>
+            Create a free listing, upload photos and videos, and get discovered by thousands of buyers in your area.
+          </p>
+        </div>
+
+        <div className="relative grid grid-cols-2 gap-4">
+          {[
+            { label: 'Active Sellers', value: '71' },
+            { label: 'Locations Covered', value: '12' },
+            { label: 'Monthly Views', value: '14K+' },
+            { label: 'Free to List', value: '100%' },
+          ].map((stat) => (
+            <div key={`auth-stat-${stat.label}`} className="rounded-xl p-4" style={{ backgroundColor: 'rgba(250,248,245,0.1)' }}>
+              <div className="text-2xl font-bold mb-0.5" style={{ color: '#F5A623' }}>{stat.value}</div>
+              <div className="text-xs" style={{ color: 'rgba(250,248,245,0.65)' }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right panel */}
+      <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-16 xl:px-24">
+        <div className="max-w-md w-full mx-auto">
+          <div className="flex items-center gap-2 mb-8 lg:hidden">
+            <AppLogo size={32} />
+            <span className="text-xl font-bold" style={{ color: 'var(--primary)' }}>FurniMarket</span>
+          </div>
+
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>
+              {mode === 'login' ? 'Welcome back' : 'Create your listing'}
+            </h1>
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+              {mode === 'login' ? 'Sign in to manage your profile' : 'Set up your seller profile in minutes'}
+            </p>
+          </div>
+
+          {mode === 'login' ? (
+            <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)} className="flex flex-col gap-5">
+              {authError && (
+                <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>
+                  {authError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Email Address</label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type="email" {...loginForm.register('email', { required: 'Email is required' })} className="input-base w-full pl-10 pr-4 py-3 text-sm" placeholder="your@email.com" />
+                </div>
+                {loginForm.formState.errors.email && <p className="text-xs mt-1.5" style={{ color: '#DC2626' }}>{loginForm.formState.errors.email.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type={showPassword ? 'text' : 'password'} {...loginForm.register('password', { required: 'Password is required' })} className="input-base w-full pl-10 pr-10 py-3 text-sm" placeholder="••••••••" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} aria-label="Toggle password visibility">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {loginForm.formState.errors.password && <p className="text-xs mt-1.5" style={{ color: '#DC2626' }}>{loginForm.formState.errors.password.message}</p>}
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full mt-1 disabled:opacity-60">
+                {loading ? <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> : <><LogIn size={16} /> Sign In</>}
+              </button>
+
+              <p className="text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                No listing yet?{' '}
+                <button type="button" onClick={() => setMode('register')} className="font-semibold transition-colors" style={{ color: 'var(--primary)' }}>Create one free</button>
+              </p>
+            </form>
+          ) : (
+            <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)} className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Your Name</label>
+                  <input type="text" {...registerForm.register('name', { required: 'Name is required' })} className="input-base w-full px-3 py-3 text-sm" placeholder="James Mwangi" />
+                  {registerForm.formState.errors.name && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.name.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Business Name</label>
+                  <input type="text" {...registerForm.register('businessName', { required: 'Business name is required' })} className="input-base w-full px-3 py-3 text-sm" placeholder="Mwangi Furniture Works" />
+                  {registerForm.formState.errors.businessName && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.businessName.message}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Email Address</label>
+                <input type="email" {...registerForm.register('email', { required: 'Email is required' })} className="input-base w-full px-3 py-3 text-sm" placeholder="you@yourbusiness.co.ke" />
+                {registerForm.formState.errors.email && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.email.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Password</label>
+                <div className="relative">
+                  <input type={showPassword ? 'text' : 'password'} {...registerForm.register('password', { required: 'Password required', minLength: { value: 8, message: 'Minimum 8 characters' } })} className="input-base w-full px-3 pr-10 py-3 text-sm" placeholder="At least 8 characters" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} aria-label="Toggle password">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {registerForm.formState.errors.password && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.password.message}</p>}
+              </div>
+
+              {/* Road / Corridor */}
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Road / Corridor</label>
+                <div className="relative">
+                  <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <select {...registerForm.register('road', { required: 'Road is required' })} className="input-base w-full pl-9 pr-4 py-3 text-sm appearance-none">
+                    <option value="">Select road/corridor…</option>
+                    {roads.map((r) => (
+                      <option key={`reg-road-${r.id}`} value={r.name}>{r.name} ({r.county})</option>
+                    ))}
+                  </select>
+                </div>
+                {registerForm.formState.errors.road && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.road.message}</p>}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Main Location</label>
+                  <div className="relative">
+                    <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                    <select {...registerForm.register('location', { required: 'Location is required' })} className="input-base w-full pl-9 pr-4 py-3 text-sm appearance-none">
+                      <option value="">Select area…</option>
+                      {LOCATIONS.map((loc) => (
+                        <option key={`reg-loc-${loc.id}`} value={loc.name}>{loc.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {registerForm.formState.errors.location && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.location.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Sub-location / Street</label>
+                  <input type="text" {...registerForm.register('subLocation')} className="input-base w-full px-3 py-3 text-sm" placeholder="e.g. Kinoo Market" />
+                </div>
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full mt-1 disabled:opacity-60">
+                {loading ? <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> : <><UserPlus size={16} /> Create Listing</>}
+              </button>
+
+              <p className="text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                Already have a listing?{' '}
+                <button type="button" onClick={() => setMode('login')} className="font-semibold transition-colors" style={{ color: 'var(--primary)' }}>Sign in</button>
+              </p>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
