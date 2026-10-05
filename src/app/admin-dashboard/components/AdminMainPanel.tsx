@@ -273,7 +273,7 @@ function PasswordResetModal({ seller, onClose }: PasswordResetModalProps) {
 
 export default function AdminMainPanel({ onLogout }: Props) {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { clients, locations, blogPosts, siteSettings } = useAppStore();
 
   // Global seller search state
@@ -334,10 +334,10 @@ export default function AdminMainPanel({ onLogout }: Props) {
     <div className="min-h-screen flex" style={{ backgroundColor: 'var(--background)' }}>
       {/* Sidebar */}
       <aside
-        className={`flex-shrink-0 flex flex-col border-r transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-60' : 'w-16'} fixed inset-y-0 left-0 z-30 lg:relative lg:inset-auto`}
+        className={`flex-shrink-0 flex flex-col border-r transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-56' : 'w-0 lg:w-16'} fixed inset-y-0 left-0 z-30 lg:relative lg:inset-auto overflow-hidden`}
         style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
       >
-        <div className={`h-16 flex items-center border-b px-4 ${sidebarOpen ? 'justify-between' : 'justify-center'}`} style={{ borderColor: 'var(--border)' }}>
+        <div className={`h-16 flex items-center border-b px-3 ${sidebarOpen ? 'justify-between' : 'justify-center'}`} style={{ borderColor: 'var(--border)' }}>
           {sidebarOpen && (
             <div className="flex items-center gap-2 overflow-hidden">
               <AppLogo size={28} />
@@ -347,7 +347,7 @@ export default function AdminMainPanel({ onLogout }: Props) {
               </div>
             </div>
           )}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg" style={{ color: 'var(--muted-foreground)' }} aria-label="Toggle sidebar">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg flex-shrink-0" style={{ color: 'var(--muted-foreground)' }} aria-label="Toggle sidebar">
             {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
@@ -356,17 +356,17 @@ export default function AdminMainPanel({ onLogout }: Props) {
           {navItems.map((item) => (
             <button
               key={`admin-nav-${item.id}`}
-              onClick={() => { setActiveTab(item.id); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+              onClick={() => { setActiveTab(item.id); setSidebarOpen(false); }}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all w-full ${activeTab === item.id ? 'sidebar-active' : ''}`}
               style={activeTab !== item.id ? { color: 'var(--muted-foreground)' } : {}}
-              title={!sidebarOpen ? item.label : undefined}
+              title={item.label}
             >
               <span className="flex-shrink-0">{item.icon}</span>
               {sidebarOpen && (
                 <>
-                  <span className="flex-1 text-left truncate font-medium">{item.label}</span>
+                  <span className="flex-1 text-left truncate font-medium text-xs">{item.label}</span>
                   {item.badge && (
-                    <span className="text-xs font-mono px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(194,105,42,0.15)', color: 'var(--primary)' }}>
+                    <span className="text-xs font-mono px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(194,105,42,0.15)', color: 'var(--primary)' }}>
                       {item.badge}
                     </span>
                   )}
@@ -380,29 +380,31 @@ export default function AdminMainPanel({ onLogout }: Props) {
               href="/"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm w-full transition-colors"
               style={{ color: 'var(--muted-foreground)' }}
-              title={!sidebarOpen ? 'View Homepage' : undefined}
+              title="View Homepage"
             >
               <Home size={18} className="flex-shrink-0" />
-              {sidebarOpen && <span className="font-medium">View Homepage</span>}
+              {sidebarOpen && <span className="font-medium text-xs">View Homepage</span>}
             </Link>
           </div>
         </nav>
 
-        <div className={`border-t p-3 ${sidebarOpen ? '' : 'flex justify-center'}`} style={{ borderColor: 'var(--border)' }}>
+        <div className="border-t p-3" style={{ borderColor: 'var(--border)' }}>
           {sidebarOpen ? (
             <div className="flex items-center justify-between">
               <div className="min-w-0">
                 <p className="text-xs font-semibold truncate" style={{ color: 'var(--foreground)' }}>Administrator</p>
                 <p className="text-xs truncate" style={{ color: 'var(--muted-foreground)' }}>admin@furnimarket.co.ke</p>
               </div>
-              <button onClick={onLogout} className="p-1.5 rounded-lg ml-2 transition-colors" style={{ color: 'var(--muted-foreground)' }} title="Sign out" aria-label="Sign out">
+              <button onClick={onLogout} className="p-1.5 rounded-lg ml-2 transition-colors flex-shrink-0" style={{ color: 'var(--muted-foreground)' }} title="Sign out" aria-label="Sign out">
                 <LogOut size={16} />
               </button>
             </div>
           ) : (
-            <button onClick={onLogout} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--muted-foreground)' }} title="Sign out" aria-label="Sign out">
-              <LogOut size={16} />
-            </button>
+            <div className="flex justify-center">
+              <button onClick={onLogout} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--muted-foreground)' }} title="Sign out" aria-label="Sign out">
+                <LogOut size={16} />
+              </button>
+            </div>
           )}
         </div>
       </aside>

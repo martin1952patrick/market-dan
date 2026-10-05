@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Search, MapPin, ChevronDown } from 'lucide-react';
 import { useAppStore } from '@/lib/AppContext';
-import Link from 'next/link';
+
 
 export default function HeroSection() {
   const { locations, setSearchLocation, siteSettings } = useAppStore();
@@ -130,8 +130,8 @@ export default function HeroSection() {
                 onClick={() => setShowMoreLocations((v) => !v)}
                 className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all"
                 style={{
-                  backgroundColor: showMoreLocations ? '#F5A623' : 'rgba(250,248,245,0.18)',
-                  color: showMoreLocations ? '#1C1410' : 'rgba(250,248,245,0.9)',
+                  backgroundColor: showMoreLocations ? '#DC2626' : 'rgba(250,248,245,0.18)',
+                  color: showMoreLocations ? '#FFFFFF' : 'rgba(250,248,245,0.9)',
                 }}
               >
                 <span>More</span>
@@ -168,24 +168,6 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Micro Locations row — shown after Popular */}
-          {microLocations.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className="text-xs font-medium" style={{ color: 'rgba(250,248,245,0.5)' }}>We also serve:</span>
-              {microLocations.map((ml) => (
-                <button
-                  key={`micro-loc-${ml.id}`}
-                  onClick={() => handleSelect(ml.name)}
-                  className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
-                  style={{ backgroundColor: 'rgba(245,166,35,0.15)', color: 'rgba(250,248,245,0.75)', border: '1px solid rgba(245,166,35,0.25)' }}
-                  title={ml.description}
-                >
-                  {ml.name}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Types dropdown — row below Popular */}
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <span className="text-xs font-medium" style={{ color: 'rgba(250,248,245,0.5)' }}>Types:</span>
@@ -197,17 +179,6 @@ export default function HeroSection() {
                 window.dispatchEvent(new CustomEvent('furni-type-select', { detail: type }));
               }
             }} />
-          </div>
-
-          {/* Browse all furniture link */}
-          <div className="mt-4">
-            <Link
-              href="/furniture"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all"
-              style={{ backgroundColor: 'rgba(250,248,245,0.1)', color: 'rgba(250,248,245,0.85)', border: '1px solid rgba(250,248,245,0.2)' }}
-            >
-              Browse All Furniture by Category →
-            </Link>
           </div>
         </div>
       </div>

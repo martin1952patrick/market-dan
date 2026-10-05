@@ -1,6 +1,6 @@
 'use client';
-import React, { useState } from 'react';
-import { Crown, Star, Zap, Award, CheckCircle2, Phone, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Crown, Star, Zap, Award, CheckCircle2, Phone, Loader2, ChevronDown, ChevronUp, CreditCard, X, AlertCircle } from 'lucide-react';
 import { useAppStore } from '@/lib/AppContext';
 import type { ListingTier } from '@/lib/mockData';
 
@@ -27,9 +27,9 @@ const PACKAGES: PackageTier[] = [
     border: '#D4AF37',
     icon: <Crown size={20} />,
     options: [
-      { days: 7, original: 1100, price: 0 },
-      { days: 14, original: 1950, price: 0 },
-      { days: 30, original: 3500, price: 0 },
+      { days: 7, original: 1100, price: 1100 },
+      { days: 14, original: 1950, price: 1950 },
+      { days: 30, original: 3500, price: 3500 },
     ],
   },
   {
@@ -42,9 +42,9 @@ const PACKAGES: PackageTier[] = [
     border: '#E91E8C',
     icon: <Star size={20} />,
     options: [
-      { days: 7, original: 900, price: 0 },
-      { days: 14, original: 1600, price: 0 },
-      { days: 30, original: 2800, price: 0 },
+      { days: 7, original: 900, price: 900 },
+      { days: 14, original: 1600, price: 1600 },
+      { days: 30, original: 2800, price: 2800 },
     ],
   },
   {
@@ -57,9 +57,9 @@ const PACKAGES: PackageTier[] = [
     border: '#7C3AED',
     icon: <Zap size={20} />,
     options: [
-      { days: 7, original: 650, price: 0 },
-      { days: 14, original: 1150, price: 0 },
-      { days: 30, original: 2100, price: 0 },
+      { days: 7, original: 650, price: 650 },
+      { days: 14, original: 1150, price: 1150 },
+      { days: 30, original: 2100, price: 2100 },
     ],
   },
   {
@@ -72,12 +72,115 @@ const PACKAGES: PackageTier[] = [
     border: '#3D2B1F',
     icon: <Award size={20} />,
     options: [
-      { days: 7, original: 500, price: 0 },
-      { days: 14, original: 850, price: 0 },
-      { days: 30, original: 1500, price: 0 },
+      { days: 7, original: 500, price: 500 },
+      { days: 14, original: 850, price: 850 },
+      { days: 30, original: 1500, price: 1500 },
     ],
   },
 ];
+
+// M-Pesa payment modal
+function MpesaPayModal({
+  onClose,
+  businessName,
+  amount,
+  tierLabel,
+  days,
+}: {
+  onClose: () => void;
+  businessName: string;
+  amount: number;
+  tierLabel: string;
+  days: number;
+}) {
+  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState<'input' | 'processing' | 'success'>('input');
+  const [phoneError, setPhoneError] = useState('');
+
+  const handlePay = () => {
+    if (!phone.match(/^(07|01|\+2547|\+2541)\d{8}$/)) {
+      setPhoneError('Enter a valid Safaricom number e.g. 0712 345 678');
+      return;
+    }
+    setPhoneError('');
+    setStep('processing');
+    setTimeout(() => setStep('success'), 3000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(28,20,16,0.75)' }}>
+      <div className="rounded-2xl border shadow-modal w-full max-w-sm" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#16A34A', color: '#fff' }}>
+              <Phone size={16} />
+            </div>
+            <span className="font-bold text-base" style={{ color: 'var(--foreground)' }}>M-Pesa Subscription</span>
+          </div>
+          {step !== 'processing' && (
+            <button onClick={onClose} className="p-1.5 rounded-lg" style={{ color: 'var(--muted-foreground)' }} aria-label="Close">
+              <X size={18} />
+            </button>
+          )}
+        </div>
+
+        <div className="px-6 py-5">
+          {step === 'input' && (
+            <>
+              <div className="rounded-xl p-4 mb-5 text-center" style={{ backgroundColor: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)' }}>
+                <p className="text-xs font-medium mb-1" style={{ color: '#15803D' }}>{tierLabel} — {days} Days</p>
+                <p className="text-3xl font-bold" style={{ color: '#15803D' }}>KES {amount.toLocaleString()}</p>
+                <p className="text-xs mt-1" style={{ color: '#16A34A' }}>{businessName}</p>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>M-Pesa Phone Number</label>
+                <div className="relative">
+                  <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0712 345 678"
+                    className="input-base w-full pl-9 pr-4 py-3 text-sm"
+                  />
+                </div>
+                {phoneError && <p className="text-xs mt-1.5" style={{ color: '#DC2626' }}>{phoneError}</p>}
+                <p className="text-xs mt-1.5" style={{ color: 'var(--muted-foreground)' }}>An STK push will be sent to this number. Enter your M-Pesa PIN to complete.</p>
+              </div>
+              <button
+                onClick={handlePay}
+                className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                style={{ backgroundColor: '#16A34A', color: '#fff' }}
+              >
+                <CreditCard size={16} />
+                Pay KES {amount.toLocaleString()} via M-Pesa
+              </button>
+            </>
+          )}
+          {step === 'processing' && (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(22,163,74,0.1)' }}>
+                <Loader2 size={32} className="animate-spin" style={{ color: '#16A34A' }} />
+              </div>
+              <p className="font-bold text-base mb-2" style={{ color: 'var(--foreground)' }}>STK Push Sent</p>
+              <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Check your phone <strong>{phone}</strong> and enter your M-Pesa PIN.</p>
+            </div>
+          )}
+          {step === 'success' && (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(22,163,74,0.1)' }}>
+                <CheckCircle2 size={32} style={{ color: '#16A34A' }} />
+              </div>
+              <p className="font-bold text-base mb-2" style={{ color: 'var(--foreground)' }}>Payment Successful!</p>
+              <p className="text-sm mb-5" style={{ color: 'var(--muted-foreground)' }}>Your subscription is now active for {days} days.</p>
+              <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#16A34A', color: '#fff' }}>Done</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   clientId: string;
@@ -87,7 +190,18 @@ interface Props {
 }
 
 export default function VisibilityPackage({ clientId, clientEmail, businessName, currentTier }: Props) {
-  const { setClientTier, updateClientProfile } = useAppStore();
+  const { clients, setClientTier, updateClientProfile } = useAppStore();
+  const profile = clients.find((c) => c.id === clientId);
+
+  // Determine if free trial has ended (admin ended it or 30 days elapsed)
+  const trialEnded = profile?.freeTrialEnded === true || (() => {
+    if (!profile?.freeTrialActivatedAt) return false;
+    const activatedAt = new Date(profile.freeTrialActivatedAt);
+    const now = new Date();
+    const diffDays = (now.getTime() - activatedAt.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays >= 30;
+  })();
+
   const [selectedTier, setSelectedTier] = useState<ListingTier>(currentTier ?? null);
   const [selectedDays, setSelectedDays] = useState<Record<string, number>>({
     elite: 7, spotlight: 7, premium: 7, standard: 7,
@@ -97,39 +211,47 @@ export default function VisibilityPackage({ clientId, clientEmail, businessName,
   const [activating, setActivating] = useState(false);
   const [activated, setActivated] = useState(false);
   const [expandedTier, setExpandedTier] = useState<string | null>(null);
+  const [showMpesaModal, setShowMpesaModal] = useState(false);
+
+  // When trial has ended, pre-select the tier the seller originally had
+  useEffect(() => {
+    if (trialEnded && profile?.tier && !selectedTier) {
+      setSelectedTier(profile.tier);
+    }
+  }, [trialEnded, profile?.tier, selectedTier]);
 
   const selectedPackage = PACKAGES.find((p) => p.id === selectedTier);
   const selectedOption = selectedPackage
     ? selectedPackage.options.find((o) => o.days === selectedDays[selectedTier ?? ''])
     : null;
-  const totalDue = selectedOption?.price ?? 0;
-  const isFree = totalDue === 0;
 
-  const handleActivate = () => {
+  // In trial-ended mode, amount is the actual price (not free)
+  const totalDue = trialEnded
+    ? (selectedOption?.price ?? 0)
+    : 0;
+
+  const handleActivateTrial = () => {
     if (!selectedTier) return;
-    if (!isFree) {
-      if (!mpesaPhone.match(/^(07|01|\+2547|\+2541)\d{8}$/)) {
-        setPhoneError('Enter a valid Safaricom number e.g. 0712 345 678');
-        return;
-      }
-    }
-    setPhoneError('');
     setActivating(true);
-
     setTimeout(() => {
-      // Set tier in context — auto-classifies the seller
       setClientTier(clientId, selectedTier);
-      // Set subscription expiry
       const days = selectedDays[selectedTier];
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + days);
       updateClientProfile(clientId, {
         subscriptionExpiry: expiry.toISOString().split('T')[0],
         status: 'active',
+        freeTrialActivatedAt: new Date().toISOString(),
+        freeTrialEnded: false,
       });
       setActivating(false);
       setActivated(true);
     }, 1500);
+  };
+
+  const handlePayNow = () => {
+    if (!selectedTier || !selectedOption) return;
+    setShowMpesaModal(true);
   };
 
   if (activated) {
@@ -161,11 +283,29 @@ export default function VisibilityPackage({ clientId, clientEmail, businessName,
 
   return (
     <div className="max-w-3xl">
+      {/* Trial ended banner */}
+      {trialEnded && (
+        <div className="rounded-xl border p-4 mb-6 flex items-start gap-3" style={{ backgroundColor: 'rgba(220,38,38,0.06)', borderColor: 'rgba(220,38,38,0.3)' }}>
+          <AlertCircle size={20} style={{ color: '#DC2626', flexShrink: 0, marginTop: 1 }} />
+          <div>
+            <p className="font-bold text-sm mb-1" style={{ color: '#991B1B' }}>Your free trial has ended</p>
+            <p className="text-xs" style={{ color: '#B91C1C' }}>
+              Select your preferred tier and duration below, then click <strong>Pay Now</strong> to reactivate your listing via M-Pesa.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>Select Your Visibility Package</h2>
+        <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>
+          {trialEnded ? 'Renew Your Visibility Package' : 'Select Your Visibility Package'}
+        </h2>
         <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-          Choose a placement tier and duration. All packages are <strong style={{ color: '#16A34A' }}>FREE TRIAL</strong> — activate instantly.
+          {trialEnded
+            ? 'Choose a placement tier and duration to reactivate your listing.'
+            : <>Choose a placement tier and duration. All packages are <strong style={{ color: '#16A34A' }}>FREE TRIAL</strong> — activate instantly.</>
+          }
         </p>
         {currentTier && (
           <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: 'rgba(194,105,42,0.12)', color: 'var(--primary)' }}>
@@ -264,12 +404,22 @@ export default function VisibilityPackage({ clientId, clientEmail, businessName,
                           <p className="font-bold text-sm mb-0.5" style={{ color: 'var(--foreground)' }}>
                             {opt.days} Days
                           </p>
-                          <p className="text-xs line-through" style={{ color: 'var(--muted-foreground)' }}>
-                            KSh {opt.original.toLocaleString()}
-                          </p>
-                          <p className="text-sm font-bold" style={{ color: '#16A34A' }}>
-                            KSh 0 <span className="text-xs font-normal">(FREE TRIAL)</span>
-                          </p>
+                          {trialEnded ? (
+                            <>
+                              <p className="text-sm font-bold" style={{ color: '#DC2626' }}>
+                                KSh {opt.price.toLocaleString()}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-xs line-through" style={{ color: 'var(--muted-foreground)' }}>
+                                KSh {opt.original.toLocaleString()}
+                              </p>
+                              <p className="text-sm font-bold" style={{ color: '#16A34A' }}>
+                                KSh 0 <span className="text-xs font-normal">(FREE TRIAL)</span>
+                              </p>
+                            </>
+                          )}
                         </button>
                       );
                     })}
@@ -282,15 +432,27 @@ export default function VisibilityPackage({ clientId, clientEmail, businessName,
       </div>
 
       {/* Total + activation */}
-      <div className="rounded-xl border-2 p-5" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}>
+      <div className="rounded-xl border-2 p-5" style={{ borderColor: trialEnded ? 'rgba(220,38,38,0.4)' : 'var(--border)', backgroundColor: 'var(--card)' }}>
         <div className="flex items-center justify-between mb-4 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--muted-foreground)' }}>Total Due</p>
             {selectedTier ? (
-              <p className="text-2xl font-bold" style={{ color: '#16A34A' }}>
-                KSh {totalDue.toLocaleString()}
-                {isFree && <span className="text-sm font-normal ml-2" style={{ color: '#16A34A' }}>(FREE TRIAL)</span>}
-              </p>
+              trialEnded ? (
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold" style={{ color: '#DC2626' }}>
+                    KSh {totalDue.toLocaleString()}
+                  </p>
+                  <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(220,38,38,0.1)', color: '#DC2626' }}>
+                    <X size={11} />
+                    Trial Ended
+                  </span>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold" style={{ color: '#16A34A' }}>
+                  KSh 0
+                  <span className="text-sm font-normal ml-2" style={{ color: '#16A34A' }}>(FREE TRIAL)</span>
+                </p>
+              )
             ) : (
               <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Select a package above</p>
             )}
@@ -300,15 +462,15 @@ export default function VisibilityPackage({ clientId, clientEmail, businessName,
               </p>
             )}
           </div>
-          {selectedTier && isFree && (
+          {selectedTier && !trialEnded && (
             <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(22,163,74,0.12)', color: '#16A34A' }}>
               🎁 Free Trial
             </span>
           )}
         </div>
 
-        {/* M-Pesa input — only shown when price > 0 */}
-        {selectedTier && !isFree && (
+        {/* M-Pesa input — only shown when price > 0 and not using modal */}
+        {selectedTier && trialEnded && (
           <div className="mb-4">
             <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>
               Enter Safaricom M-Pesa Number
@@ -330,27 +492,52 @@ export default function VisibilityPackage({ clientId, clientEmail, businessName,
           </div>
         )}
 
-        <button
-          onClick={handleActivate}
-          disabled={!selectedTier || activating}
-          className="w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            backgroundColor: selectedTier ? '#16A34A' : 'var(--muted)',
-            color: selectedTier ? '#FFFFFF' : 'var(--muted-foreground)',
-          }}
-        >
-          {activating ? (
-            <><Loader2 size={16} className="animate-spin" /> Activating…</>
-          ) : (
-            <><CheckCircle2 size={16} /> ACTIVATE FREE TRIAL NOW</>
-          )}
-        </button>
-        {selectedTier && (
+        {trialEnded ? (
+          <button
+            onClick={handlePayNow}
+            disabled={!selectedTier || !selectedOption}
+            className="w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: selectedTier ? '#DC2626' : 'var(--muted)',
+              color: selectedTier ? '#FFFFFF' : 'var(--muted-foreground)',
+            }}
+          >
+            <CreditCard size={16} />
+            PAY NOW — KSh {(selectedOption?.price ?? 0).toLocaleString()}
+          </button>
+        ) : (
+          <button
+            onClick={handleActivateTrial}
+            disabled={!selectedTier || activating}
+            className="w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: selectedTier ? '#16A34A' : 'var(--muted)',
+              color: selectedTier ? '#FFFFFF' : 'var(--muted-foreground)',
+            }}
+          >
+            {activating ? (
+              <><Loader2 size={16} className="animate-spin" /> Activating…</>
+            ) : (
+              <><CheckCircle2 size={16} /> ACTIVATE FREE TRIAL NOW</>
+            )}
+          </button>
+        )}
+        {selectedTier && !trialEnded && (
           <p className="text-xs text-center mt-2" style={{ color: 'var(--muted-foreground)' }}>
             Clicking this instantly publishes your profile live for the selected period.
           </p>
         )}
       </div>
+
+      {showMpesaModal && selectedPackage && selectedOption && (
+        <MpesaPayModal
+          onClose={() => setShowMpesaModal(false)}
+          businessName={businessName}
+          amount={selectedOption.price}
+          tierLabel={selectedPackage.label}
+          days={selectedDays[selectedTier ?? '']}
+        />
+      )}
     </div>
   );
 }
