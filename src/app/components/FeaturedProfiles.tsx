@@ -60,7 +60,54 @@ export default function FeaturedProfiles() {
         </a>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-6">
+      {/* Mobile: horizontal scroll showing 4 full + 6th ~1/4 visible */}
+      <div className="md:hidden overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex gap-3" style={{ width: 'max-content' }}>
+          {displayed.map((profile) => {
+            const profileUrl = getProfileUrl(profile);
+            return (
+              <div
+                key={`featured-mob-${profile.id}`}
+                className="card-hover rounded-2xl overflow-hidden border flex-shrink-0"
+                style={{
+                  backgroundColor: 'var(--card)',
+                  borderColor: 'var(--border)',
+                  width: 'calc((100vw - 2rem) / 4.25)',
+                  minWidth: 140,
+                  maxWidth: 180,
+                }}
+              >
+                <Link href={profileUrl} className="block relative">
+                  <div className="w-full overflow-hidden" style={{ aspectRatio: '3/4' }}>
+                    <AppImage
+                      src={profile.media[0]?.url ?? ''}
+                      alt={profile.media[0]?.alt ?? `${profile.businessName} furniture display`}
+                      width={300}
+                      height={400}
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
+                  <div className="absolute top-2 left-2 featured-ribbon text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1" style={{ color: '#1C1410' }}>
+                    <Star size={9} className="fill-current" />
+                  </div>
+                </Link>
+                <div className="p-2">
+                  <Link href={profileUrl}>
+                    <h3 className="font-bold text-xs truncate hover:underline leading-tight" style={{ color: 'var(--foreground)' }}>{profile.businessName}</h3>
+                  </Link>
+                  <div className="flex items-center gap-1 mt-1">
+                    <MapPin size={10} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                    <span className="text-xs truncate" style={{ color: 'var(--muted-foreground)' }}>{profile.location}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop: grid */}
+      <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-6">
         {displayed.map((profile) => {
           const profileUrl = getProfileUrl(profile);
           return (
@@ -78,11 +125,11 @@ export default function FeaturedProfiles() {
                 </div>
                 <div className="absolute top-3 left-3 featured-ribbon text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1" style={{ color: '#1C1410' }}>
                   <Star size={11} className="fill-current" />
-                  <span className="hidden sm:inline">Featured</span>
+                  <span>Featured</span>
                 </div>
                 <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1" style={{ backgroundColor: 'rgba(28,20,16,0.6)', color: '#FAF8F5' }}>
                   <Eye size={11} />
-                  <span className="hidden sm:inline">{profile.views.toLocaleString()}</span>
+                  <span>{profile.views.toLocaleString()}</span>
                 </div>
               </Link>
 
@@ -114,7 +161,7 @@ export default function FeaturedProfiles() {
                   )}
                 </div>
 
-                <p className="text-xs sm:text-sm leading-relaxed line-clamp-2 mb-3 sm:mb-4 hidden sm:block" style={{ color: 'var(--muted-foreground)' }}>
+                <p className="text-xs sm:text-sm leading-relaxed line-clamp-2 mb-3 sm:mb-4" style={{ color: 'var(--muted-foreground)' }}>
                   {profile.description}
                 </p>
 

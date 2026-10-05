@@ -19,6 +19,7 @@ import {
   NearbyPlace,
   MicroLocation,
   VisibilityPackageConfig,
+  VisibilityPackageTier,
 } from '@/lib/mockData';
 
 interface AppState {
@@ -51,6 +52,7 @@ interface AppContextValue extends AppState {
   updateClientPassword: (id: string, newPassword: string) => void;
   adminUpdateClient: (id: string, data: Partial<ClientProfile>) => void;
   setSellerVisibilityPackage: (id: string, pkg: VisibilityPackageConfig) => void;
+  endSellerFreeTrial: (id: string) => void;
 
   // Admin: locations
   addLocation: (loc: Location) => void;
@@ -193,9 +195,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setSellerVisibilityPackage = useCallback((id: string, pkg: VisibilityPackageConfig) => {
     setClients((prev) => prev.map((c) =>
       c.id === id
-        ? { ...c, visibilityPackage: pkg, tier: pkg.tier, subscriptionExpiry: pkg.endDate, status: 'active' }
+        ? {
+            ...c,
+            visibilityPackage: pkg,
+            tier: pkg.tier,
+            subscriptionExpiry: pkg.endDate,
+            status: 'active',
+            // Track when free trial is first activated (only set once)
+            freeTrialActivatedAt: c.freeTrialActivatedAt ?? new Date().toISOString(),
+            freeTrialEnded: false,
+          }
         : c
     ));
+  }, []);
+
+  const endSellerFreeTrial = useCallback((id: string) => {
+    setClients((prev) => prev.map((c) => {
+      if (c.id !== id) return c;
+      // Expire the package to yesterday
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const expiredDate = yesterday.toISOString().split('T')[0];
+      const tier = (c.visibilityPackage?.tier ?? c.tier ?? 'standard') as VisibilityPackageTier;
+      const updatedPkg: VisibilityPackageConfig = {
+        tier,
+        startDate: c.visibilityPackage?.startDate ?? expiredDate,
+        endDate: expiredDate,
+        durationDays: c.visibilityPackage?.durationDays ?? 30,
+        setByAdmin: true,
+      };
+      return {
+        ...c,
+        visibilityPackage: updatedPkg,
+        subscriptionExpiry: expiredDate,
+        status: 'dormant',
+        freeTrialEnded: true,
+      };
+    }));
   }, []);
 
   const moveFeaturedUp = useCallback((id: string) => {
@@ -403,6 +439,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateClientPassword,
         adminUpdateClient,
         setSellerVisibilityPackage,
+        endSellerFreeTrial,
         moveFeaturedUp,
         moveFeaturedDown,
         addLocation,

@@ -28,12 +28,6 @@ export default function PublicTopbar() {
             All Furniture
           </Link>
           <Link
-            href="/furniture"
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-300 hover:text-amber-400"
-          >
-            Browse by Category
-          </Link>
-          <Link
             href="/blogs"
             className="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-300 hover:text-amber-400"
           >

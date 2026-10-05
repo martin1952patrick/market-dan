@@ -125,7 +125,7 @@ export default function AllListings() {
           </h2>
           <p className="text-sm mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
             {filtered?.length} seller{filtered?.length !== 1 ? 's' : ''} found
-            {selectedLocation !== 'All' ? ` in ${selectedLocation}` : ''}
+            {selectedLocation !== 'All' ? <span style={{ color: '#DC2626' }}> in {selectedLocation}</span> : ''}
             {totalPages > 1 && ` · Page ${safePage} of ${totalPages}`}
           </p>
         </div>
@@ -459,6 +459,42 @@ export default function AllListings() {
                 </span>
                 {place.description && (
                   <span className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>{place.description}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* We Also Serve — micro locations shown below nearby places when a location is selected */}
+      {selectedLocation !== 'All' && (siteSettings?.microLocations ?? []).length > 0 && (
+        <div className="mt-6 rounded-2xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <MapPin size={18} style={{ color: 'var(--primary)' }} />
+            <h3 className="font-bold text-base" style={{ color: 'var(--foreground)' }}>
+              We Also Serve
+            </h3>
+          </div>
+          <p className="text-xs mb-3" style={{ color: 'var(--muted-foreground)' }}>
+            Areas near {selectedLocation} where you can also find furniture sellers:
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {(siteSettings?.microLocations ?? []).map((ml) => (
+              <button
+                key={`micro-serve-${ml.id}`}
+                onClick={() => {
+                  setSearchLocation(ml.name);
+                  setSelectedLocation(ml.name);
+                }}
+                className="flex flex-col items-start px-4 py-3 rounded-xl border transition-all card-hover text-left"
+                style={{ backgroundColor: 'rgba(245,166,35,0.06)', borderColor: 'rgba(245,166,35,0.3)' }}
+              >
+                <span className="flex items-center gap-1.5 font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
+                  <MapPin size={12} style={{ color: 'var(--primary)' }} />
+                  {ml.name}
+                </span>
+                {ml.description && (
+                  <span className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>{ml.description}</span>
                 )}
               </button>
             ))}
