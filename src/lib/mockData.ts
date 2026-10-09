@@ -79,6 +79,8 @@ export interface ClientProfile {
   delivery?: string;
   assembly?: string;
   paymentMethods?: string;
+  // Which product detail fields are enabled/visible on public profile
+  enabledProductFields?: string[];
 }
 
 export interface Location {

@@ -37,7 +37,12 @@ export default function ProfileDetailClient({ profile }: Props) {
 
   const isDormant = profile.status === 'dormant';
 
-  const hasProductDetails = DETAIL_FIELDS.some((f) => profile[f.key]);
+  // Only show fields that are enabled by the seller AND have a value
+  const enabledSet = new Set(profile.enabledProductFields ?? []);
+  const hasProductDetails = DETAIL_FIELDS.some((f) => {
+    const value = profile[f.key] as string | undefined;
+    return value && (profile.enabledProductFields ? enabledSet.has(f.key as string) : true);
+  });
 
   return (
     <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
@@ -158,7 +163,9 @@ export default function ProfileDetailClient({ profile }: Props) {
         <div className="mb-8 rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
           {DETAIL_FIELDS.map((field) => {
             const value = profile[field.key] as string | undefined;
-            if (!value) return null;
+            // Only show if field has a value AND is enabled (or no enabledProductFields set yet)
+            const isEnabled = profile.enabledProductFields ? enabledSet.has(field.key as string) : true;
+            if (!value || !isEnabled) return null;
             return (
               <div
                 key={`detail-field-${field.key}`}

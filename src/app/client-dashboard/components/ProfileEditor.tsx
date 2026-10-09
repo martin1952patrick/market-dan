@@ -38,7 +38,7 @@ interface ProfileFormData {
 
 const CATEGORY_OPTIONS = ['Sofas', 'Bedroom', 'Dining Sets', 'Office', "Children\'s", 'Outdoor', 'Custom Orders', 'Budget-Friendly', 'Luxury', 'Rattan', 'Traditional', 'Bespoke', 'Upholstery', 'Wholesale'];
 
-const PRODUCT_DETAIL_FIELDS: { name: keyof ProfileFormData; label: string; placeholder: string; hint?: string }[] = [
+const PRODUCT_DETAIL_FIELDS: { name: keyof ProfileFormData; label: string; placeholder: string }[] = [
   { name: 'itemType', label: 'Item Type', placeholder: 'e.g. Sofa Set, Dining Table, Wardrobe' },
   { name: 'weight', label: 'Weight', placeholder: 'e.g. 45 kg / 99 lbs (set)' },
   { name: 'dimensions', label: 'Dimensions', placeholder: 'e.g. 210 cm (L) x 90 cm (W) x 85 cm (H)' },
@@ -48,7 +48,7 @@ const PRODUCT_DETAIL_FIELDS: { name: keyof ProfileFormData; label: string; place
   { name: 'roomPlacement', label: 'Room Placement', placeholder: 'e.g. Living Room, Bedroom, Office' },
   { name: 'furnitureType', label: 'Type', placeholder: 'e.g. Sofa Set (3-seater + 2 single chairs)' },
   { name: 'condition', label: 'Condition', placeholder: 'e.g. Brand New, Refurbished, Used' },
-  { name: 'warranty', label: 'Warranty', placeholder: 'e.g. 1 Year (manufacturer)' },
+  { name: 'warranty', label: 'Warranty', placeholder: 'e.g. 2 years (manufacturer)' },
   { name: 'origin', label: 'Origin', placeholder: 'e.g. Kenya, Turkey, Malaysia' },
   { name: 'delivery', label: 'Delivery', placeholder: 'e.g. Available within Nairobi and surrounding areas' },
   { name: 'assembly', label: 'Assembly', placeholder: 'e.g. Required (comes with instructions)' },
@@ -60,6 +60,11 @@ export default function ProfileEditor({ profile }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(profile.categories);
+
+  // Enabled product fields — default to all that already have a value, or empty
+  const [enabledFields, setEnabledFields] = useState<Set<string>>(
+    new Set(profile.enabledProductFields ?? PRODUCT_DETAIL_FIELDS.filter((f) => !!(profile as Record<string, unknown>)[f.name]).map((f) => f.name))
+  );
 
   const { register, handleSubmit, watch, formState: { errors, isDirty } } = useForm<ProfileFormData>({
     defaultValues: {
@@ -99,10 +104,26 @@ export default function ProfileEditor({ profile }: Props) {
     );
   };
 
+  const toggleField = (fieldName: string) => {
+    setEnabledFields((prev) => {
+      const next = new Set(prev);
+      if (next.has(fieldName)) {
+        next.delete(fieldName);
+      } else {
+        next.add(fieldName);
+      }
+      return next;
+    });
+  };
+
   const onSubmit = (data: ProfileFormData) => {
     setSaving(true);
     setTimeout(() => {
-      updateClientProfile(profile.id, { ...data, categories: selectedCategories });
+      updateClientProfile(profile.id, {
+        ...data,
+        categories: selectedCategories,
+        enabledProductFields: Array.from(enabledFields),
+      });
       setSaving(false);
       setSaved(true);
       toast.success('Profile updated successfully', {
@@ -255,21 +276,111 @@ export default function ProfileEditor({ profile }: Props) {
             </div>
             <h3 className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>Product Details</h3>
           </div>
-          <p className="text-xs mb-5" style={{ color: 'var(--muted-foreground)' }}>
-            Fill in the product specifications that will appear on your public profile. Leave blank any fields that don&apos;t apply.
+          <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>
+            Tick the fields you want to show on your public profile, then fill in the value. Only ticked fields with a value will be visible to buyers.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {PRODUCT_DETAIL_FIELDS.map((field) => (
-              <div key={`prod-field-${field.name}`}>
-                <label className="block text-sm font-semibold mb-1.5" style={{ color: '#DC2626' }}>{field.label}</label>
-                <input
-                  type="text"
-                  {...register(field.name)}
-                  className="input-base w-full px-3 py-2.5 text-sm"
-                  placeholder={field.placeholder}
-                />
-              </div>
-            ))}
+          <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: 'rgba(220,38,38,0.06)', borderLeft: '3px solid #DC2626' }}>
+            <span style={{ color: '#DC2626' }}>✓ Tick = visible on profile &nbsp;|&nbsp; ✗ Untick = hidden from profile</span>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {PRODUCT_DETAIL_FIELDS.map((field) => {
+              const isEnabled = enabledFields.has(field.name);
+              return (
+                <div
+                  key={`prod-field-${field.name}`}
+                  className="rounded-lg border transition-all"
+                  style={{
+                    borderColor: isEnabled ? '#DC2626' : 'var(--border)',
+                    backgroundColor: isEnabled ? 'rgba(220,38,38,0.03)' : 'var(--muted)',
+                  }}
+                >
+                  {/* Checkbox row */}
+                  <label
+                    className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
+                    htmlFor={`toggle-${field.name}`}
+                  >
+                    {/* Custom checkbox */}
+                    <div
+                      className="flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all"
+                      style={{
+                        borderColor: isEnabled ? '#DC2626' : 'var(--muted-foreground)',
+                        backgroundColor: isEnabled ? '#DC2626' : 'transparent',
+                      }}
+                    >
+                      {isEnabled && (
+                        <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                          <path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                    <input
+                      id={`toggle-${field.name}`}
+                      type="checkbox"
+                      className="sr-only"
+                      checked={isEnabled}
+                      onChange={() => toggleField(field.name)}
+                    />
+                    <span
+                      className="text-sm font-bold"
+                      style={{ color: isEnabled ? '#DC2626' : 'var(--muted-foreground)' }}
+                    >
+                      {field.label}
+                    </span>
+                    {isEnabled && (
+                      <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(220,38,38,0.1)', color: '#DC2626' }}>
+                        Visible
+                      </span>
+                    )}
+                    {!isEnabled && (
+                      <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+                        Hidden
+                      </span>
+                    )}
+                  </label>
+
+                  {/* Text input — always visible so seller can pre-fill */}
+                  <div className="px-4 pb-3">
+                    <input
+                      type="text"
+                      {...register(field.name)}
+                      className="input-base w-full px-3 py-2.5 text-sm"
+                      placeholder={isEnabled ? field.placeholder : `Tick to enable — ${field.placeholder}`}
+                      style={{
+                        opacity: isEnabled ? 1 : 0.5,
+                      }}
+                    />
+                    {!isEnabled && (
+                      <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
+                        Tick the checkbox above to show this field on your profile.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between text-xs" style={{ color: 'var(--muted-foreground)' }}>
+            <span>{enabledFields.size} of {PRODUCT_DETAIL_FIELDS.length} fields enabled</span>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                className="underline text-xs"
+                style={{ color: '#DC2626' }}
+                onClick={() => setEnabledFields(new Set(PRODUCT_DETAIL_FIELDS.map((f) => f.name)))}
+              >
+                Enable all
+              </button>
+              <button
+                type="button"
+                className="underline text-xs"
+                style={{ color: 'var(--muted-foreground)' }}
+                onClick={() => setEnabledFields(new Set())}
+              >
+                Disable all
+              </button>
+            </div>
           </div>
         </div>
 
