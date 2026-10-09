@@ -282,96 +282,40 @@ export default function AllListings() {
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
 
-                      {/* VIP ribbon — red diagonal top-right */}
-                      {profile?.tier === 'elite' && (
+                      {/* Tier ribbon — diagonal top-right for all tiers */}
+                      {profile?.tier && (
                         <div
                           className="absolute top-0 right-0 overflow-hidden"
-                          style={{ width: 72, height: 72, pointerEvents: 'none' }}
+                          style={{ width: 80, height: 80, pointerEvents: 'none' }}
                         >
                           <div
                             className="absolute flex items-center justify-center font-black text-xs tracking-wide"
                             style={{
-                              backgroundColor: '#DC2626',
-                              color: '#FFFFFF',
-                              width: 100,
-                              top: 18,
-                              right: -26,
+                              backgroundColor:
+                                profile?.tier === 'elite' ? '#D4AF37' :
+                                profile?.tier === 'spotlight' ? '#E91E8C' :
+                                profile?.tier === 'premium'? '#D4AF37' : '#1C1410',
+                              color:
+                                profile?.tier === 'elite' ? '#1C1410' :
+                                profile?.tier === 'spotlight' ? '#FFFFFF' :
+                                profile?.tier === 'premium'? '#1C1410' : '#FFFFFF',
+                              width: 110,
+                              top: 20,
+                              right: -28,
                               transform: 'rotate(45deg)',
                               padding: '3px 0',
                               boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                              fontSize: 9,
                             }}
                           >
-                            VIP
+                            {profile?.tier === 'elite' ? 'ELITE' :
+                             profile?.tier === 'spotlight' ? 'SPOTLIGHT' :
+                             profile?.tier === 'premium'? 'PREMIUM' : 'STANDARD'}
                           </div>
                         </div>
                       )}
 
-                      {/* Verified ribbon — blue diagonal bottom-left */}
-                      {profile?.verified && (
-                        <div
-                          className="absolute bottom-0 left-0 overflow-hidden"
-                          style={{ width: 90, height: 90, pointerEvents: 'none' }}
-                        >
-                          <div
-                            className="absolute flex items-center justify-center font-black text-xs tracking-wide"
-                            style={{
-                              backgroundColor: '#1D4ED8',
-                              color: '#FFFFFF',
-                              width: 130,
-                              bottom: 18,
-                              left: -32,
-                              transform: 'rotate(45deg)',
-                              padding: '3px 0',
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
-                            }}
-                          >
-                            VERIFIED
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Premium Top ribbon — gold diagonal bottom-right */}
-                      {(profile?.tier === 'premium' || profile?.tier === 'spotlight') && (
-                        <div
-                          className="absolute bottom-0 right-0 overflow-hidden"
-                          style={{ width: 90, height: 90, pointerEvents: 'none' }}
-                        >
-                          <div
-                            className="absolute flex items-center justify-center font-black text-xs tracking-wide leading-tight text-center"
-                            style={{
-                              backgroundColor: profile?.tier === 'premium' ? '#D4AF37' : '#E91E8C',
-                              color: profile?.tier === 'premium' ? '#1C1410' : '#FFFFFF',
-                              width: 130,
-                              bottom: 18,
-                              right: -32,
-                              transform: 'rotate(-45deg)',
-                              padding: '3px 0',
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
-                            }}
-                          >
-                            {profile?.tier === 'premium' ? 'PREMIUM TOP' : 'SPOTLIGHT'}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Standard — circle badge top-left */}
-                      {profile?.tier === 'standard' && (
-                        <div
-                          className="absolute top-2 left-2 w-10 h-10 rounded-full flex items-center justify-center text-center"
-                          style={{
-                            backgroundColor: '#1C1410',
-                            color: '#FFFFFF',
-                            fontSize: 8,
-                            fontWeight: 800,
-                            lineHeight: 1.1,
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-                          }}
-                        >
-                          STD
-                        </div>
-                      )}
-
-                      {/* Featured star — only if no tier badge at top-left */}
+                      {/* Featured star — only if no tier */}
                       {profile?.featured && !profile?.tier && (
                         <div className="absolute top-2 left-2">
                           <span className="featured-ribbon text-xs font-bold px-2 py-0.5 rounded-full" style={{ color: '#1C1410' }}>
@@ -380,7 +324,32 @@ export default function AllListings() {
                         </div>
                       )}
 
-                      <div className="absolute bottom-2 left-2 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium" style={{ backgroundColor: 'rgba(28,20,16,0.65)', color: '#FAF8F5' }}>
+                      {/* Verified ribbon — blue diagonal bottom-left, above location pill */}
+                      {profile?.verified && (
+                        <div
+                          className="absolute bottom-0 left-0 overflow-hidden"
+                          style={{ width: 80, height: 80, pointerEvents: 'none' }}
+                        >
+                          <div
+                            className="absolute flex items-center justify-center font-black tracking-wide"
+                            style={{
+                              backgroundColor: '#1D4ED8',
+                              color: '#FFFFFF',
+                              width: 110,
+                              bottom: 20,
+                              left: -28,
+                              transform: 'rotate(45deg)',
+                              padding: '3px 0',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                              fontSize: 9,
+                            }}
+                          >
+                            VERIFIED
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium" style={{ backgroundColor: 'rgba(28,20,16,0.65)', color: '#FAF8F5' }}>
                         <MapPin size={10} />
                         {profile?.location}
                       </div>

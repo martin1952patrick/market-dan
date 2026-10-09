@@ -78,6 +78,7 @@ interface AppContextValue extends AppState {
   setShuffleInterval: (minutes: number) => void;
   setClientsPerPage: (count: number) => void;
   updateSiteSettings: (settings: Partial<SiteSettings>) => void;
+  setCompulsoryProductFields: (fields: string[]) => void;
 
   // Admin: nearby places
   addNearbyPlace: (place: NearbyPlace) => void;
@@ -347,6 +348,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSiteSettings((prev) => ({ ...prev, ...settings }));
   }, []);
 
+  const setCompulsoryProductFields = useCallback((fields: string[]) => {
+    setSiteSettings((prev) => ({ ...prev, compulsoryProductFields: fields }));
+  }, []);
+
   // --- Admin: nearby places ---
   const addNearbyPlace = useCallback((place: NearbyPlace) => {
     setSiteSettings((prev) => ({
@@ -457,6 +462,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setShuffleInterval,
         setClientsPerPage,
         updateSiteSettings,
+        setCompulsoryProductFields,
         addNearbyPlace,
         updateNearbyPlace,
         deleteNearbyPlace,

@@ -572,6 +572,39 @@ export const CLIENT_PROFILES: ClientProfile[] = [
   categories: ['Sofas', 'Custom Orders', 'Living Room'],
   views: 124,
   subscriptionExpiry: '2027-09-01'
+},
+{
+  id: 'client-014',
+  numericId: 14,
+  name: 'Evans Ochieng',
+  businessName: 'Evans Ochieng Furniture',
+  email: 'evans@ochiengfurniture.co.ke',
+  password: 'Evans@2026',
+  phone: '+254 711 222 333',
+  county: 'Nairobi',
+  road: 'Ngong Road',
+  subcounty: 'Langata',
+  division: "Lang'ata",
+  location: "Lang'ata",
+  subLocation: "Lang'ata Shopping Centre",
+  description:
+  "Quality furniture at affordable prices. Specialising in living room sets, bedroom furniture, and dining tables. We offer free delivery within Nairobi and a 1-year warranty on all products. Visit our showroom along Ngong Road.",
+  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_112193a91-1763294779964.png",
+  avatarAlt: 'Evans Ochieng, furniture business owner, professional portrait',
+  media: [
+  { id: 'media-014-1', type: 'image', url: "https://img.rocket.new/generatedImages/rocket_gen_img_193a8b75c-1785500918094.png", alt: 'Modern living room sofa set in grey fabric with wooden legs' },
+  { id: 'media-014-2', type: 'image', url: "https://img.rocket.new/generatedImages/rocket_gen_img_16be3c6c2-1772173142757.png", alt: 'Dining table set with six chairs in natural oak finish' },
+  { id: 'media-014-3', type: 'image', url: "https://img.rocket.new/generatedImages/rocket_gen_img_106d16631-1772752383799.png", alt: 'Bedroom furniture set with wardrobe and bedside tables' }],
+
+  uploadLimit: 3,
+  status: 'active',
+  hidden: false,
+  featured: false,
+  featuredOrder: null,
+  joinedDate: '2024-10-01',
+  categories: ['Sofas', 'Bedroom', 'Dining Sets'],
+  views: 341,
+  subscriptionExpiry: '2027-10-01'
 }];
 
 
@@ -644,11 +677,13 @@ export interface SiteSettings {
   metaTitle: string;
   nearbyPlaces: NearbyPlace[];
   microLocations: MicroLocation[];
+  compulsoryProductFields?: string[];
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteHeading: 'Find Furniture Sellers Near You',
   metaTitle: 'FurniMarket Kenya — Find Furniture Sellers Near You',
+  compulsoryProductFields: [],
   nearbyPlaces: [
   { id: 'np-001', name: 'Dagoretti Corner', locationId: 'loc-karen', description: 'Shopping hub near Karen' },
   { id: 'np-002', name: 'Hardy', locationId: 'loc-karen', description: 'Upmarket area adjacent to Karen' },

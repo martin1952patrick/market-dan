@@ -56,10 +56,12 @@ const PRODUCT_DETAIL_FIELDS: { name: keyof ProfileFormData; label: string; place
 ];
 
 export default function ProfileEditor({ profile }: Props) {
-  const { locations, divisions, updateClientProfile } = useAppStore();
+  const { locations, divisions, updateClientProfile, siteSettings } = useAppStore();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(profile.categories);
+
+  const compulsorySet = new Set(siteSettings?.compulsoryProductFields ?? []);
 
   // Enabled product fields — default to all that already have a value, or empty
   const [enabledFields, setEnabledFields] = useState<Set<string>>(
@@ -105,6 +107,8 @@ export default function ProfileEditor({ profile }: Props) {
   };
 
   const toggleField = (fieldName: string) => {
+    // Compulsory fields cannot be unticked
+    if (compulsorySet.has(fieldName)) return;
     setEnabledFields((prev) => {
       const next = new Set(prev);
       if (next.has(fieldName)) {
@@ -279,26 +283,35 @@ export default function ProfileEditor({ profile }: Props) {
           <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>
             Tick the fields you want to show on your public profile, then fill in the value. Only ticked fields with a value will be visible to buyers.
           </p>
+          {compulsorySet.size > 0 && (
+            <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: 'rgba(220,38,38,0.06)', borderLeft: '3px solid #DC2626' }}>
+              <span style={{ color: '#DC2626' }}>
+                ⚠ Fields marked <strong>Required</strong> are compulsory — you must fill them before saving.
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: 'rgba(220,38,38,0.06)', borderLeft: '3px solid #DC2626' }}>
             <span style={{ color: '#DC2626' }}>✓ Tick = visible on profile &nbsp;|&nbsp; ✗ Untick = hidden from profile</span>
           </div>
 
           <div className="flex flex-col gap-3">
             {PRODUCT_DETAIL_FIELDS.map((field) => {
-              const isEnabled = enabledFields.has(field.name);
+              const isEnabled = enabledFields.has(field.name) || compulsorySet.has(field.name);
+              const isCompulsory = compulsorySet.has(field.name);
               return (
                 <div
                   key={`prod-field-${field.name}`}
                   className="rounded-lg border transition-all"
                   style={{
-                    borderColor: isEnabled ? '#DC2626' : 'var(--border)',
-                    backgroundColor: isEnabled ? 'rgba(220,38,38,0.03)' : 'var(--muted)',
+                    borderColor: isCompulsory ? '#DC2626' : isEnabled ? 'rgba(220,38,38,0.5)' : 'var(--border)',
+                    backgroundColor: isCompulsory ? 'rgba(220,38,38,0.05)' : isEnabled ? 'rgba(220,38,38,0.03)' : 'var(--muted)',
                   }}
                 >
                   {/* Checkbox row */}
                   <label
-                    className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
+                    className="flex items-center gap-3 px-4 py-3 select-none"
                     htmlFor={`toggle-${field.name}`}
+                    style={{ cursor: isCompulsory ? 'not-allowed' : 'pointer' }}
                   >
                     {/* Custom checkbox */}
                     <div
@@ -320,6 +333,7 @@ export default function ProfileEditor({ profile }: Props) {
                       className="sr-only"
                       checked={isEnabled}
                       onChange={() => toggleField(field.name)}
+                      disabled={isCompulsory}
                     />
                     <span
                       className="text-sm font-bold"
@@ -327,30 +341,38 @@ export default function ProfileEditor({ profile }: Props) {
                     >
                       {field.label}
                     </span>
-                    {isEnabled && (
-                      <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(220,38,38,0.1)', color: '#DC2626' }}>
-                        Visible
-                      </span>
-                    )}
-                    {!isEnabled && (
-                      <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }}>
-                        Hidden
-                      </span>
-                    )}
+                    <div className="ml-auto flex items-center gap-1.5">
+                      {isCompulsory && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#DC2626', color: '#fff' }}>
+                          Required
+                        </span>
+                      )}
+                      {isEnabled && !isCompulsory && (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(220,38,38,0.1)', color: '#DC2626' }}>
+                          Visible
+                        </span>
+                      )}
+                      {!isEnabled && !isCompulsory && (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+                          Hidden
+                        </span>
+                      )}
+                    </div>
                   </label>
 
-                  {/* Text input — always visible so seller can pre-fill */}
+                  {/* Text input */}
                   <div className="px-4 pb-3">
                     <input
                       type="text"
-                      {...register(field.name)}
+                      {...register(field.name, isCompulsory ? { required: `${field.label} is required by admin` } : {})}
                       className="input-base w-full px-3 py-2.5 text-sm"
                       placeholder={isEnabled ? field.placeholder : `Tick to enable — ${field.placeholder}`}
-                      style={{
-                        opacity: isEnabled ? 1 : 0.5,
-                      }}
+                      style={{ opacity: isEnabled ? 1 : 0.5 }}
                     />
-                    {!isEnabled && (
+                    {errors[field.name] && (
+                      <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{(errors[field.name] as { message?: string })?.message}</p>
+                    )}
+                    {!isEnabled && !isCompulsory && (
                       <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
                         Tick the checkbox above to show this field on your profile.
                       </p>
@@ -376,7 +398,10 @@ export default function ProfileEditor({ profile }: Props) {
                 type="button"
                 className="underline text-xs"
                 style={{ color: 'var(--muted-foreground)' }}
-                onClick={() => setEnabledFields(new Set())}
+                onClick={() => {
+                  // Keep compulsory fields enabled
+                  setEnabledFields(new Set(Array.from(compulsorySet)));
+                }}
               >
                 Disable all
               </button>
