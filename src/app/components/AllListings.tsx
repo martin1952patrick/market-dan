@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import { MapPin, Eye, Search, X, Lock, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
+import { MapPin, Eye, Search, X, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppStore } from '@/lib/AppContext';
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
@@ -17,11 +17,11 @@ const TYPE_OPTIONS = ['All Types', 'Full Set', 'Partial Set', 'Standalone'];
 // Categories that support sub-options
 const CATEGORIES_WITH_SUBS = ['Sofas', 'Bedroom', 'Dining Sets', 'Office', "Children\'s"];
 
-const TIER_CONFIG: Record<NonNullable<ListingTier>, { label: string; bg: string; text: string }> = {
-  elite: { label: 'Elite', bg: '#D4AF37', text: '#1C1410' },
-  spotlight: { label: 'Spotlight', bg: '#E91E8C', text: '#FFFFFF' },
-  premium: { label: 'Premium', bg: '#7C3AED', text: '#FFFFFF' },
-  standard: { label: 'Standard', bg: '#1C1410', text: '#FFFFFF' },
+const TIER_CONFIG: Record<NonNullable<ListingTier>, { label: string; bg: string; text: string; ribbonPos: 'top-left' | 'bottom-right' }> = {
+  elite: { label: 'Elite', bg: '#D4AF37', text: '#1C1410', ribbonPos: 'bottom-right' },
+  spotlight: { label: 'Spotlight', bg: '#E91E8C', text: '#FFFFFF', ribbonPos: 'bottom-right' },
+  premium: { label: 'Premium Top', bg: '#D4AF37', text: '#1C1410', ribbonPos: 'bottom-right' },
+  standard: { label: 'Standard', bg: '#1C1410', text: '#FFFFFF', ribbonPos: 'top-left' },
 };
 
 export default function AllListings() {
@@ -282,43 +282,105 @@ export default function AllListings() {
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
 
-                      {/* Verified badge — top-right corner, right-angle flush */}
+                      {/* VIP ribbon — red diagonal top-right */}
+                      {profile?.tier === 'elite' && (
+                        <div
+                          className="absolute top-0 right-0 overflow-hidden"
+                          style={{ width: 72, height: 72, pointerEvents: 'none' }}
+                        >
+                          <div
+                            className="absolute flex items-center justify-center font-black text-xs tracking-wide"
+                            style={{
+                              backgroundColor: '#DC2626',
+                              color: '#FFFFFF',
+                              width: 100,
+                              top: 18,
+                              right: -26,
+                              transform: 'rotate(45deg)',
+                              padding: '3px 0',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                            }}
+                          >
+                            VIP
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Verified ribbon — blue diagonal bottom-left */}
                       {profile?.verified && (
                         <div
-                          className="absolute top-0 right-0 flex items-center gap-1 px-2 py-1 text-xs font-bold"
-                          style={{
-                            backgroundColor: '#1D4ED8',
-                            color: '#FFFFFF',
-                            borderBottomLeftRadius: '8px',
-                          }}
+                          className="absolute bottom-0 left-0 overflow-hidden"
+                          style={{ width: 90, height: 90, pointerEvents: 'none' }}
                         >
-                          <ShieldCheck size={11} />
-                          Verified
+                          <div
+                            className="absolute flex items-center justify-center font-black text-xs tracking-wide"
+                            style={{
+                              backgroundColor: '#1D4ED8',
+                              color: '#FFFFFF',
+                              width: 130,
+                              bottom: 18,
+                              left: -32,
+                              transform: 'rotate(45deg)',
+                              padding: '3px 0',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                            }}
+                          >
+                            VERIFIED
+                          </div>
                         </div>
                       )}
 
-                      {/* Tier badge — bottom-left corner, right-angle flush */}
-                      {tierCfg && (
+                      {/* Premium Top ribbon — gold diagonal bottom-right */}
+                      {(profile?.tier === 'premium' || profile?.tier === 'spotlight') && (
                         <div
-                          className="absolute bottom-0 left-0 px-2 py-1 text-xs font-bold"
-                          style={{
-                            backgroundColor: tierCfg.bg,
-                            color: tierCfg.text,
-                            borderTopRightRadius: '8px',
-                          }}
+                          className="absolute bottom-0 right-0 overflow-hidden"
+                          style={{ width: 90, height: 90, pointerEvents: 'none' }}
                         >
-                          {tierCfg.label}
+                          <div
+                            className="absolute flex items-center justify-center font-black text-xs tracking-wide leading-tight text-center"
+                            style={{
+                              backgroundColor: profile?.tier === 'premium' ? '#D4AF37' : '#E91E8C',
+                              color: profile?.tier === 'premium' ? '#1C1410' : '#FFFFFF',
+                              width: 130,
+                              bottom: 18,
+                              right: -32,
+                              transform: 'rotate(-45deg)',
+                              padding: '3px 0',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                            }}
+                          >
+                            {profile?.tier === 'premium' ? 'PREMIUM TOP' : 'SPOTLIGHT'}
+                          </div>
                         </div>
                       )}
 
-                      <div className="absolute top-2 right-2 flex gap-1.5">
-                        {profile?.featured && !profile?.verified && (
+                      {/* Standard — circle badge top-left */}
+                      {profile?.tier === 'standard' && (
+                        <div
+                          className="absolute top-2 left-2 w-10 h-10 rounded-full flex items-center justify-center text-center"
+                          style={{
+                            backgroundColor: '#1C1410',
+                            color: '#FFFFFF',
+                            fontSize: 8,
+                            fontWeight: 800,
+                            lineHeight: 1.1,
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                          }}
+                        >
+                          STD
+                        </div>
+                      )}
+
+                      {/* Featured star — only if no tier badge at top-left */}
+                      {profile?.featured && !profile?.tier && (
+                        <div className="absolute top-2 left-2">
                           <span className="featured-ribbon text-xs font-bold px-2 py-0.5 rounded-full" style={{ color: '#1C1410' }}>
                             ★ Featured
                           </span>
-                        )}
-                      </div>
-                      <div className="absolute bottom-2 left-2 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium" style={{ backgroundColor: 'rgba(28,20,16,0.65)', color: '#FAF8F5', marginLeft: tierCfg ? '70px' : '0' }}>
+                        </div>
+                      )}
+
+                      <div className="absolute bottom-2 left-2 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium" style={{ backgroundColor: 'rgba(28,20,16,0.65)', color: '#FAF8F5' }}>
                         <MapPin size={10} />
                         {profile?.location}
                       </div>

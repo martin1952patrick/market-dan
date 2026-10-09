@@ -64,6 +64,21 @@ export interface ClientProfile {
   visibilityPackage?: VisibilityPackageConfig;
   freeTrialActivatedAt?: string; // ISO date string — set when seller activates free trial
   freeTrialEnded?: boolean; // true when admin ends trial or 30 days elapsed
+  // Product detail fields
+  itemType?: string;
+  weight?: string;
+  dimensions?: string;
+  material?: string;
+  colour?: string;
+  style?: string;
+  roomPlacement?: string;
+  furnitureType?: string;
+  condition?: string;
+  warranty?: string;
+  origin?: string;
+  delivery?: string;
+  assembly?: string;
+  paymentMethods?: string;
 }
 
 export interface Location {

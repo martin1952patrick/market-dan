@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Save, MapPin, Phone, Mail, User, FileText, CheckCircle } from 'lucide-react';
+import { Save, MapPin, Phone, Mail, User, FileText, CheckCircle, Package } from 'lucide-react';
 import { ClientProfile } from '@/lib/mockData';
 import { useAppStore } from '@/lib/AppContext';
 import { Toaster, toast } from 'sonner';
@@ -19,9 +19,41 @@ interface ProfileFormData {
   division: string;
   location: string;
   description: string;
+  // Product detail fields
+  itemType: string;
+  weight: string;
+  dimensions: string;
+  material: string;
+  colour: string;
+  style: string;
+  roomPlacement: string;
+  furnitureType: string;
+  condition: string;
+  warranty: string;
+  origin: string;
+  delivery: string;
+  assembly: string;
+  paymentMethods: string;
 }
 
 const CATEGORY_OPTIONS = ['Sofas', 'Bedroom', 'Dining Sets', 'Office', "Children\'s", 'Outdoor', 'Custom Orders', 'Budget-Friendly', 'Luxury', 'Rattan', 'Traditional', 'Bespoke', 'Upholstery', 'Wholesale'];
+
+const PRODUCT_DETAIL_FIELDS: { name: keyof ProfileFormData; label: string; placeholder: string; hint?: string }[] = [
+  { name: 'itemType', label: 'Item Type', placeholder: 'e.g. Sofa Set, Dining Table, Wardrobe' },
+  { name: 'weight', label: 'Weight', placeholder: 'e.g. 45 kg / 99 lbs (set)' },
+  { name: 'dimensions', label: 'Dimensions', placeholder: 'e.g. 210 cm (L) x 90 cm (W) x 85 cm (H)' },
+  { name: 'material', label: 'Material', placeholder: 'e.g. Solid wood frame, high-density foam' },
+  { name: 'colour', label: 'Colour', placeholder: 'e.g. Beige (fabric), Dark Walnut' },
+  { name: 'style', label: 'Style', placeholder: 'e.g. Modern / Contemporary, Traditional' },
+  { name: 'roomPlacement', label: 'Room Placement', placeholder: 'e.g. Living Room, Bedroom, Office' },
+  { name: 'furnitureType', label: 'Type', placeholder: 'e.g. Sofa Set (3-seater + 2 single chairs)' },
+  { name: 'condition', label: 'Condition', placeholder: 'e.g. Brand New, Refurbished, Used' },
+  { name: 'warranty', label: 'Warranty', placeholder: 'e.g. 1 Year (manufacturer)' },
+  { name: 'origin', label: 'Origin', placeholder: 'e.g. Kenya, Turkey, Malaysia' },
+  { name: 'delivery', label: 'Delivery', placeholder: 'e.g. Available within Nairobi and surrounding areas' },
+  { name: 'assembly', label: 'Assembly', placeholder: 'e.g. Required (comes with instructions)' },
+  { name: 'paymentMethods', label: 'Payment Methods', placeholder: 'e.g. Cash, M-Pesa, Bank Transfer' },
+];
 
 export default function ProfileEditor({ profile }: Props) {
   const { locations, divisions, updateClientProfile } = useAppStore();
@@ -39,6 +71,20 @@ export default function ProfileEditor({ profile }: Props) {
       division: profile.division || '',
       location: profile.location,
       description: profile.description,
+      itemType: profile.itemType || '',
+      weight: profile.weight || '',
+      dimensions: profile.dimensions || '',
+      material: profile.material || '',
+      colour: profile.colour || '',
+      style: profile.style || '',
+      roomPlacement: profile.roomPlacement || '',
+      furnitureType: profile.furnitureType || '',
+      condition: profile.condition || '',
+      warranty: profile.warranty || '',
+      origin: profile.origin || '',
+      delivery: profile.delivery || '',
+      assembly: profile.assembly || '',
+      paymentMethods: profile.paymentMethods || '',
     },
   });
 
@@ -198,6 +244,32 @@ export default function ProfileEditor({ profile }: Props) {
               placeholder="Describe your furniture business…"
             />
             {errors.description && <p className="text-xs mt-1.5" style={{ color: '#DC2626' }}>{errors.description.message}</p>}
+          </div>
+        </div>
+
+        {/* Product Details */}
+        <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(220,38,38,0.1)', color: '#DC2626' }}>
+              <Package size={15} />
+            </div>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>Product Details</h3>
+          </div>
+          <p className="text-xs mb-5" style={{ color: 'var(--muted-foreground)' }}>
+            Fill in the product specifications that will appear on your public profile. Leave blank any fields that don&apos;t apply.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {PRODUCT_DETAIL_FIELDS.map((field) => (
+              <div key={`prod-field-${field.name}`}>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: '#DC2626' }}>{field.label}</label>
+                <input
+                  type="text"
+                  {...register(field.name)}
+                  className="input-base w-full px-3 py-2.5 text-sm"
+                  placeholder={field.placeholder}
+                />
+              </div>
+            ))}
           </div>
         </div>
 
