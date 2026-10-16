@@ -29,44 +29,17 @@ const WATERMARK_MIN_WIDTH = 200;
 const WatermarkOverlay = () => (
     <div
         aria-hidden="true"
-        className="pointer-events-none select-none absolute inset-0 overflow-hidden"
+        className="pointer-events-none select-none absolute inset-0 overflow-hidden flex items-center justify-center"
         style={{ zIndex: 1 }}
     >
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <pattern
-                    id="ns-watermark-pattern"
-                    width="170"
-                    height="90"
-                    patternUnits="userSpaceOnUse"
-                    patternTransform="rotate(-28)"
-                >
-                    <text
-                        x="85"
-                        y="45"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fontFamily="sans-serif"
-                        fontWeight="700"
-                        fontSize="15"
-                        fill="rgba(255,255,255,0.45)"
-                        stroke="rgba(0,0,0,0.18)"
-                        strokeWidth="0.4"
-                        style={{ filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.35))' }}
-                    >
-                        {WATERMARK_TEXT}
-                    </text>
-                </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#ns-watermark-pattern)" />
-        </svg>
         <span
-            className="absolute bottom-1.5 right-2 font-bold"
+            className="font-bold whitespace-nowrap"
             style={{
-                color: 'rgba(255,255,255,0.8)',
-                fontSize: 'clamp(10px, 3.5%, 18px)',
-                textShadow: '0 1px 4px rgba(0,0,0,0.6)',
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: 'clamp(12px, 9%, 40px)',
+                textShadow: '0 1px 4px rgba(0,0,0,0.55)',
                 fontFamily: 'sans-serif',
+                transform: 'rotate(-10deg)',
             }}
         >
             {WATERMARK_TEXT}
@@ -102,10 +75,11 @@ const AppImage = memo(function AppImage({
 
     const isFallback = imageSrc === fallbackSrc || (typeof imageSrc === 'string' && imageSrc.includes('no_image.png'));
     const isSvg = typeof imageSrc === 'string' && imageSrc.endsWith('.svg');
+    const isAlreadyStamped = typeof imageSrc === 'string' && imageSrc.includes('__ns_wm__');
     const isSmall = !fill && (width ?? 400) < WATERMARK_MIN_WIDTH;
     const isRound = typeof className === 'string' && className.includes('rounded-full');
     const showWatermark =
-        watermark !== undefined ? watermark : !(isFallback || isSvg || isSmall || isRound);
+        watermark !== undefined ? watermark : !(isFallback || isSvg || isSmall || isRound || isAlreadyStamped);
 
     const handleError = useCallback(() => {
         if (!hasError && imageSrc !== fallbackSrc) {
