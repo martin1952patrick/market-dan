@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client';
 import { ClientProfile, SiteSettings } from '@/lib/mockData';
 
+
 function isSchemaError(error: any): boolean {
   if (!error) return false;
   if (error.code && typeof error.code === 'string') {
