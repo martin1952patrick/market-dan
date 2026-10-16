@@ -4,6 +4,7 @@ import { MapPin, Phone, Mail, Eye, ChevronLeft, ChevronRight, X, Play, Lock, Shi
 import { ClientProfile } from '@/lib/mockData';
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
+import ReportListingModal from './ReportListingModal';
 
 interface Props {
   profile: ClientProfile;
@@ -29,6 +30,7 @@ const DETAIL_FIELDS: { key: keyof ClientProfile; label: string; icon: React.Reac
 export default function ProfileDetailClient({ profile }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [showPhone, setShowPhone] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const openLightbox = (i: number) => setLightboxIndex(i);
   const closeLightbox = () => setLightboxIndex(null);
@@ -272,6 +274,7 @@ export default function ProfileDetailClient({ profile }: Props) {
                 <span>ADD REVIEW</span>
               </button>
               <button
+                onClick={() => setShowReport(true)}
                 className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-xs font-bold border transition-colors"
                 style={{ backgroundColor: '#1C1410', color: '#FFFFFF', borderColor: '#1C1410' }}
               >
@@ -296,6 +299,14 @@ export default function ProfileDetailClient({ profile }: Props) {
         <span className="flex items-center gap-1"><Eye size={12} />{profile.views.toLocaleString()} views</span>
         <span>Joined {profile.joinedDate}</span>
       </div>
+
+      {showReport && (
+        <ReportListingModal
+          sellerId={profile.id}
+          sellerName={profile.businessName}
+          onClose={() => setShowReport(false)}
+        />
+      )}
 
       {/* Lightbox */}
       {lightboxIndex !== null && !isDormant && (

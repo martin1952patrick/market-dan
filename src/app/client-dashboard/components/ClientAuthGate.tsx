@@ -9,6 +9,7 @@ import {
   ClientProfile,
 } from '@/lib/mockData';
 import { useAppStore } from '@/lib/AppContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface AuthGateProps {
   onAuth: (email: string) => void;
@@ -42,28 +43,68 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
   const loginForm = useForm<LoginForm>();
   const registerForm = useForm<RegisterForm>();
 
-  const handleLoginSubmit = (data: LoginForm) => {
+  const handleLoginSubmit = async (data: LoginForm) => {
     setLoading(true);
     setAuthError('');
-    setTimeout(() => {
-      const match = clients.find(
-        (c) => c.email.toLowerCase() === data.email.toLowerCase() && c.password === data.password
-      );
-      if (match) {
-        onAuth(match.email);
-      } else {
-        setAuthError('Incorrect email or password. Please try again.');
+    const match = clients.find(
+      (c) => c.email.toLowerCase() === data.email.toLowerCase() && c.password === data.password
+    );
+    let authedEmail: string | null = null;
+    try {
+      const supabase = createClient();
+      const { data: signIn, error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+      if (!error && signIn?.user) authedEmail = signIn.user.email ?? data.email;
+      if (error && match) {
+        // Existing seller without a Supabase account yet: create one so their changes sync to the database
+        await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: { data: { full_name: match.name, role: 'seller' } },
+        });
+        const retry = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+        if (!retry.error) authedEmail = data.email;
       }
-      setLoading(false);
-    }, 700);
+    } catch {
+      // Fall through to local match below
+    }
+    const profileForAuth = authedEmail
+      ? clients.find((c) => c.email.toLowerCase() === authedEmail!.toLowerCase())
+      : null;
+    if (profileForAuth) {
+      onAuth(profileForAuth.email);
+    } else if (match) {
+      onAuth(match.email);
+    } else {
+      setAuthError('Incorrect email or password. Please try again.');
+    }
+    setLoading(false);
   };
 
-  const handleRegisterSubmit = (data: RegisterForm) => {
+  const handleRegisterSubmit = async (data: RegisterForm) => {
     setLoading(true);
-    setTimeout(() => {
+    {
       const existing = clients.find((c) => c.email.toLowerCase() === data.email.toLowerCase());
       if (existing) {
         registerForm.setError('email', { message: 'This email is already registered. Please sign in.' });
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: { data: { full_name: data.name, role: 'seller' } },
+        });
+        if (signUpError) {
+          registerForm.setError('email', { message: signUpError.message });
+          setLoading(false);
+          return;
+        }
+        await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+      } catch (e: any) {
+        registerForm.setError('email', { message: e?.message ?? 'Could not create account' });
         setLoading(false);
         return;
       }
@@ -110,7 +151,7 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
 
       setLoading(false);
       onAuth(data.email);
-    }, 1000);
+    }
   };
 
   return (

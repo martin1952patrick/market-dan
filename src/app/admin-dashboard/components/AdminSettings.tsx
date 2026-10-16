@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Settings, Shuffle, Users, Check, Clock, Type, Globe, AlertCircle } from 'lucide-react';
 import { useAppStore } from '@/lib/AppContext';
 import { Toaster, toast } from 'sonner';
+import AdminWhatsAppSettings from './AdminWhatsAppSettings';
 
 const SHUFFLE_OPTIONS = [
   { label: '15 minutes', value: 15 },
@@ -218,6 +219,8 @@ export default function AdminSettings() {
         </div>
 
         {/* Shuffle interval */}
+        <AdminWhatsAppSettings />
+
         <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(245,166,35,0.15)', color: '#D97706' }}>
