@@ -1,9 +1,10 @@
 'use client';
 import React, { useState } from 'react';
-import { LayoutDashboard, User, Image, Eye, Menu, X, Home, Bell, ChevronRight, CreditCard, Copy, CheckCheck, Phone, Loader2, CheckCircle2, Link2, Tag, Package, ShieldCheck, ArrowLeft,  } from 'lucide-react';
+import { LayoutDashboard, User, Image, Eye, Menu, X, Home, Bell, ChevronRight, CreditCard, Copy, CheckCheck, Phone, Loader2, CheckCircle2, Link2, Tag, Package, ShieldCheck, ArrowLeft, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
 import ProfileEditor from '@/app/client-dashboard/components/ProfileEditor';
+import SmallLocationsManager from '@/app/client-dashboard/components/SmallLocationsManager';
 import MediaManager from '@/app/client-dashboard/components/MediaManager';
 import ListingPreview from '@/app/client-dashboard/components/ListingPreview';
 import VisibilityPackage from '@/app/client-dashboard/components/VisibilityPackage';
@@ -25,7 +26,7 @@ const FURNITURE_CATEGORIES = [
   { id: 'custom', label: 'Custom & Bespoke', emoji: '🔨', desc: 'Made-to-order furniture' },
 ];
 
-type Tab = 'overview' | 'profile' | 'media' | 'preview' | 'visibility';
+type Tab = 'overview' | 'profile' | 'locations' | 'media' | 'preview' | 'visibility';
 
 interface Props {
   sellerId: string;
@@ -135,6 +136,7 @@ export default function AdminSellerDashboard({ sellerId, onClose }: Props) {
   const navItems: { id: Tab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={18} /> },
     { id: 'profile', label: 'Edit Profile', icon: <User size={18} /> },
+    { id: 'locations', label: 'Small Locations', icon: <MapPin size={18} />, badge: (profile.smallLocations?.length ?? 0) > 0 ? String(profile.smallLocations?.length) : undefined },
     { id: 'media', label: 'Media & Photos', icon: <Image size={18} />, badge: `${profile.media.length}/${profile.uploadLimit}` },
     { id: 'visibility', label: 'Visibility Package', icon: <Package size={18} /> },
     { id: 'preview', label: 'Live Preview', icon: <Eye size={18} /> },
@@ -289,6 +291,7 @@ export default function AdminSellerDashboard({ sellerId, onClose }: Props) {
               />
             )}
             {activeTab === 'profile' && <ProfileEditor profile={profile} />}
+            {activeTab === 'locations' && <SmallLocationsManager profile={profile} />}
             {activeTab === 'media' && <MediaManager profile={profile} />}
             {activeTab === 'visibility' && (
               <VisibilityPackage
@@ -518,6 +521,7 @@ function SellerOverview({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: 'Edit Profile Info', desc: 'Update name, description, contact', tab: 'profile' as Tab, icon: <User size={20} /> },
+          { label: 'Small Locations', desc: 'Add or remove areas this seller serves', tab: 'locations' as Tab, icon: <MapPin size={20} /> },
           { label: 'Manage Photos', desc: 'Upload or remove images and videos', tab: 'media' as Tab, icon: <Image size={20} /> },
           { label: 'Preview Listing', desc: 'See how buyers see this profile', tab: 'preview' as Tab, icon: <Eye size={20} /> },
         ].map((action) => (

@@ -15,7 +15,7 @@ interface AuthGateProps {
   onAuth: (email: string) => void;
 }
 
-type Mode = 'login' | 'register';
+type Mode = 'login' | 'register' | 'forgot';
 
 interface LoginForm {
   email: string;
@@ -39,9 +39,38 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [registeredUrl, setRegisteredUrl] = useState<string | null>(null);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const loginForm = useForm<LoginForm>();
   const registerForm = useForm<RegisterForm>();
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setResetMessage('');
+    const email = resetEmail.trim();
+    if (!email) {
+      setResetError('Please enter your email address.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        setResetError(error.message);
+      } else {
+        setResetMessage('If an account exists for this email, a password reset link has been sent. Check your inbox.');
+      }
+    } catch (err: any) {
+      setResetError(err?.message ?? 'Could not send reset email. Please try again.');
+    }
+    setLoading(false);
+  };
 
   const handleLoginSubmit = async (data: LoginForm) => {
     setLoading(true);
@@ -197,14 +226,36 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
 
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>
-              {mode === 'login' ? 'Welcome back' : 'Create your listing'}
+              {mode === 'login' ? 'Welcome back' : mode === 'forgot' ? 'Reset your password' : 'Create your listing'}
             </h1>
             <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-              {mode === 'login' ? 'Sign in to manage your profile' : 'Set up your seller profile in minutes'}
+              {mode === 'login' ? 'Sign in to manage your profile' : mode === 'forgot' ? 'We will email you a link to set a new password' : 'Set up your seller profile in minutes'}
             </p>
           </div>
 
-          {mode === 'login' ? (
+          {mode === 'forgot' ? (
+            <form onSubmit={handleForgotSubmit} className="flex flex-col gap-5">
+              {resetError && (
+                <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>{resetError}</div>
+              )}
+              {resetMessage && (
+                <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>{resetMessage}</div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Email Address</label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="input-base w-full pl-10 pr-4 py-3 text-sm" placeholder="your@email.com" required />
+                </div>
+              </div>
+              <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full disabled:opacity-60">
+                {loading ? 'Sending…' : 'Send Reset Link'}
+              </button>
+              <p className="text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                <button type="button" onClick={() => { setMode('login'); setResetError(''); setResetMessage(''); }} className="font-semibold transition-colors" style={{ color: 'var(--primary)' }}>Back to sign in</button>
+              </p>
+            </form>
+          ) : mode === 'login' ? (
             <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)} className="flex flex-col gap-5">
               {authError && (
                 <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>
@@ -231,6 +282,16 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
                   </button>
                 </div>
                 {loginForm.formState.errors.password && <p className="text-xs mt-1.5" style={{ color: '#DC2626' }}>{loginForm.formState.errors.password.message}</p>}
+                <div className="text-right mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => { setResetEmail(loginForm.getValues('email') ?? ''); setMode('forgot'); }}
+                    className="text-xs font-semibold transition-colors"
+                    style={{ color: 'var(--primary)' }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full mt-1 disabled:opacity-60">
