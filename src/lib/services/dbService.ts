@@ -38,6 +38,15 @@ export interface ReportInput {
   proofFile?: File | null;
 }
 
+export interface SellerMessage {
+  id: string;
+  sellerId: string;
+  senderEmail: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 // DB row <-> ClientProfile (full profile stored in `data` JSONB, key columns mirrored for querying)
 function rowToProfile(row: any): ClientProfile {
   const data = (row?.data ?? {}) as Partial<ClientProfile>;
@@ -263,5 +272,66 @@ export const dbService = {
     const { data, error } = await supabase.storage.from('report-proofs').createSignedUrl(path, 3600);
     if (error) return null;
     return data?.signedUrl ?? null;
+  },
+
+  async sendSellerMessage(input: { sellerId: string; senderEmail: string; message: string }): Promise<{ ok: boolean; error?: string }> {
+    const supabase = createClient();
+    try {
+      const { error } = await supabase.from('seller_messages').insert({
+        seller_id: input.sellerId,
+        sender_email: input.senderEmail,
+        message: input.message,
+      });
+      if (error) return { ok: false, error: error.message };
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? 'Failed to send message' };
+    }
+  },
+
+  async fetchSellerMessages(sellerId: string): Promise<SellerMessage[]> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('seller_messages')
+        .select('*')
+        .eq('seller_id', sellerId)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.log('fetchSellerMessages error:', error.message);
+        return [];
+      }
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        sellerId: r.seller_id,
+        senderEmail: r.sender_email,
+        message: r.message,
+        isRead: !!r.is_read,
+        createdAt: r.created_at,
+      }));
+    } catch (e: any) {
+      console.log('fetchSellerMessages failed:', e?.message);
+      return [];
+    }
+  },
+
+  async markSellerMessageRead(id: string, isRead: boolean): Promise<void> {
+    const supabase = createClient();
+    try {
+      const { error } = await supabase.from('seller_messages').update({ is_read: isRead }).eq('id', id);
+      if (error) console.log('markSellerMessageRead error:', error.message);
+    } catch (e: any) {
+      console.log('markSellerMessageRead failed:', e?.message);
+    }
+  },
+
+  async deleteSellerMessage(id: string): Promise<void> {
+    const supabase = createClient();
+    try {
+      const { error } = await supabase.from('seller_messages').delete().eq('id', id);
+      if (error) console.log('deleteSellerMessage error:', error.message);
+    } catch (e: any) {
+      console.log('deleteSellerMessage failed:', e?.message);
+    }
   },
 };

@@ -1,12 +1,14 @@
 'use client';
-import React, { useState } from 'react';
-import { LayoutDashboard, User, Image, Eye, LogOut, Menu, X, Home, Bell, ChevronRight, CreditCard, Copy, CheckCheck, Phone, Loader2, CheckCircle2, Link2, Tag, Package, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { LayoutDashboard, User, Image, Eye, MessageSquare, LogOut, Menu, X, Home, Bell, ChevronRight, CreditCard, Copy, CheckCheck, Phone, Loader2, CheckCircle2, Link2, Tag, Package, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
 import ProfileEditor from './ProfileEditor';
 import MediaManager from './MediaManager';
 import ListingPreview from './ListingPreview';
 import VisibilityPackage from './VisibilityPackage';
+import MessagesInbox from './MessagesInbox';
+import { dbService } from '@/lib/services/dbService';
 import { useAppStore } from '@/lib/AppContext';
 import { getProfileUrl } from '@/lib/mockData';
 
@@ -29,7 +31,7 @@ interface Props {
   onLogout: () => void;
 }
 
-type Tab = 'overview' | 'profile' | 'media' | 'preview' | 'visibility';
+type Tab = 'overview' | 'profile' | 'media' | 'preview' | 'visibility' | 'messages';
 
 // MPesa STK Push Modal — accepts dynamic amount
 function MpesaModal({ onClose, businessName, amount, label }: { onClose: () => void; businessName: string; amount?: number; label?: string }) {
@@ -131,9 +133,21 @@ export default function ClientMainDashboard({ userEmail, onLogout }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMpesa, setShowMpesa] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Find profile from shared state
   const profile = clients.find((p) => p.email === userEmail) ?? clients[0];
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    let cancelled = false;
+    dbService.fetchSellerMessages(profile.id).then((rows) => {
+      if (!cancelled) setUnreadCount(rows.filter((m) => !m.isRead).length);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id]);
 
   const profileUrl = getProfileUrl(profile);
   const fullProfileUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://marketdan3738.builtwithrocket.new'}${profileUrl}`;
@@ -174,6 +188,7 @@ export default function ClientMainDashboard({ userEmail, onLogout }: Props) {
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={18} /> },
     { id: 'profile', label: 'Edit Profile', icon: <User size={18} /> },
     { id: 'media', label: 'Media & Photos', icon: <Image size={18} />, badge: `${profile.media.length}/${profile.uploadLimit}` },
+    { id: 'messages', label: 'Messages', icon: <MessageSquare size={18} />, badge: unreadCount > 0 ? String(unreadCount) : undefined },
     { id: 'visibility', label: 'Visibility Package', icon: <Package size={18} /> },
     { id: 'preview', label: 'Live Preview', icon: <Eye size={18} /> },
   ];
@@ -337,6 +352,7 @@ export default function ClientMainDashboard({ userEmail, onLogout }: Props) {
           )}
           {activeTab === 'profile' && <ProfileEditor profile={profile} />}
           {activeTab === 'media' && <MediaManager profile={profile} />}
+          {activeTab === 'messages' && <MessagesInbox sellerId={profile.id} onUnreadChange={setUnreadCount} />}
           {activeTab === 'visibility' && (
             <VisibilityPackage
               clientId={profile.id}

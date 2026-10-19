@@ -5,6 +5,7 @@ import { ClientProfile } from '@/lib/mockData';
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import ReportListingModal from './ReportListingModal';
+import ContactSellerModal from './ContactSellerModal';
 
 interface Props {
   profile: ClientProfile;
@@ -31,6 +32,7 @@ export default function ProfileDetailClient({ profile }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [showPhone, setShowPhone] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showContact, setShowContact] = useState(false);
 
   const openLightbox = (i: number) => setLightboxIndex(i);
   const closeLightbox = () => setLightboxIndex(null);
@@ -266,14 +268,15 @@ export default function ProfileDetailClient({ profile }: Props) {
             </div>
 
             {/* Contact Seller CTA */}
-            <a
-              href={`mailto:${profile.email}`}
+            <button
+              type="button"
+              onClick={() => setShowContact(true)}
               className="flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold w-full mt-1"
               style={{ backgroundColor: '#DC2626', color: '#FFFFFF' }}
             >
               <Mail size={18} />
               CONTACT THIS SELLER
-            </a>
+            </button>
 
             {/* Action buttons */}
             <div className="grid grid-cols-3 gap-2">
@@ -323,6 +326,14 @@ export default function ProfileDetailClient({ profile }: Props) {
           sellerId={profile.id}
           sellerName={profile.businessName}
           onClose={() => setShowReport(false)}
+        />
+      )}
+
+      {showContact && (
+        <ContactSellerModal
+          sellerId={profile.id}
+          sellerName={profile.businessName}
+          onClose={() => setShowContact(false)}
         />
       )}
 
