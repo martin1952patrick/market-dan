@@ -12,7 +12,7 @@ interface Props {
 const MAX_PROOF_MB = 10;
 
 export default function ReportListingModal({ sellerId, sellerName, onClose }: Props) {
-  const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [proof, setProof] = useState<File | null>(null);
@@ -35,15 +35,15 @@ export default function ReportListingModal({ sellerId, sellerName, onClose }: Pr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!phone.trim() || !email.trim() || !message.trim()) {
-      setError('Please fill in your phone number, email and message.');
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      setError('Please fill in your name, email and message.');
       return;
     }
     setSubmitting(true);
     const res = await dbService.submitReport({
       sellerId,
       sellerName,
-      phone: phone.trim(),
+      name: name.trim(),
       email: email.trim(),
       message: message.trim(),
       proofFile: proof,
@@ -99,12 +99,12 @@ export default function ReportListingModal({ sellerId, sellerName, onClose }: Pr
               </div>
             )}
             <div>
-              <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Your phone number</label>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Your name</label>
               <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+254 7XX XXX XXX"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your full name"
                 className="input-base w-full px-3 py-2.5 text-sm"
                 required
               />

@@ -249,7 +249,7 @@ export const dbService = {
       const { error } = await supabase.from('reports').insert({
         seller_id: input.sellerId,
         seller_name: input.sellerName,
-        reporter_phone: input.phone,
+        reporter_phone: input.name,
         reporter_email: input.email,
         message: input.message,
         proof_url: proofPath,
