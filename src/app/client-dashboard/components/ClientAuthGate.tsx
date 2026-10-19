@@ -7,6 +7,7 @@ import AppLogo from '@/components/ui/AppLogo';
 import {
   LOCATIONS,
   ClientProfile,
+  getProfileUrl,
 } from '@/lib/mockData';
 import { useAppStore } from '@/lib/AppContext';
 import { createClient } from '@/lib/supabase/client';
@@ -185,10 +186,7 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
 
       addClient(newClient);
 
-      const slugify = (str: string) =>
-        str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      const profileUrl = `/${slugify(county)}/${slugify(data.road || 'main-road')}/${slugify(data.businessName)}/${slugify(data.subLocation || data.location)}/${newNumericId}`;
-      setRegisteredUrl(profileUrl);
+      setRegisteredUrl(getProfileUrl(newClient));
 
       setLoading(false);
       onAuth(data.email);

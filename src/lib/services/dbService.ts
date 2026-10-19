@@ -106,6 +106,21 @@ export const dbService = {
     }
   },
 
+  async fetchSellerByNumericId(numericId: number): Promise<ClientProfile | null> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('sellers')
+        .select('*')
+        .eq('numeric_id', numericId)
+        .maybeSingle();
+      if (error || !data) return null;
+      return rowToProfile(data);
+    } catch {
+      return null;
+    }
+  },
+
   async upsertSeller(profile: ClientProfile): Promise<void> {
     const supabase = createClient();
     try {
