@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Save, MapPin, Phone, Mail, User, FileText, CheckCircle, Package } from 'lucide-react';
+import { Save, MapPin, Phone, Mail, User, FileText, CheckCircle, Package, Plus, X } from 'lucide-react';
 import { ClientProfile } from '@/lib/mockData';
 import { useAppStore } from '@/lib/AppContext';
 import { Toaster, toast } from 'sonner';
@@ -60,6 +60,26 @@ export default function ProfileEditor({ profile }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(profile.categories);
+  const [smallLocations, setSmallLocations] = useState<string[]>(profile.smallLocations ?? []);
+  const [smallLocInput, setSmallLocInput] = useState('');
+  const [smallLocDirty, setSmallLocDirty] = useState(false);
+
+  const addSmallLocation = () => {
+    const value = smallLocInput.trim().replace(/\s+/g, ' ');
+    if (!value) return;
+    if (smallLocations.some((s) => s.toLowerCase() === value.toLowerCase())) {
+      toast.error(`"${value}" is already added`);
+      return;
+    }
+    setSmallLocations((prev) => [...prev, value]);
+    setSmallLocInput('');
+    setSmallLocDirty(true);
+  };
+
+  const removeSmallLocation = (name: string) => {
+    setSmallLocations((prev) => prev.filter((s) => s !== name));
+    setSmallLocDirty(true);
+  };
 
   const compulsorySet = new Set(siteSettings?.compulsoryProductFields ?? []);
 
@@ -126,10 +146,12 @@ export default function ProfileEditor({ profile }: Props) {
       updateClientProfile(profile.id, {
         ...data,
         categories: selectedCategories,
+        smallLocations,
         enabledProductFields: Array.from(enabledFields),
       });
       setSaving(false);
       setSaved(true);
+      setSmallLocDirty(false);
       toast.success('Profile updated successfully', {
         description: 'Your listing is now live with the new details.',
       });
@@ -407,6 +429,59 @@ export default function ProfileEditor({ profile }: Props) {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Small Locations */}
+        <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(194,105,42,0.1)', color: 'var(--primary)' }}>
+              <MapPin size={15} />
+            </div>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>Small Locations</h3>
+          </div>
+          <p className="text-xs mb-4" style={{ color: 'var(--muted-foreground)' }}>
+            Add the small areas, stages or estates you serve near {profile.location || 'your area'} (e.g. 87 Junction). Buyers searching these places will find your profile, and they are shown on your public profile below your main location. Remember to click Save Changes.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={smallLocInput}
+              onChange={(e) => setSmallLocInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addSmallLocation();
+                }
+              }}
+              className="input-base flex-1 px-3 py-2.5 text-sm"
+              placeholder="e.g. 87 Junction"
+              maxLength={60}
+            />
+            <button type="button" onClick={addSmallLocation} className="btn-primary px-4 py-2.5 text-sm flex items-center gap-1.5">
+              <Plus size={15} /> Add
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            {smallLocations.map((loc) => (
+              <span
+                key={`small-loc-${loc}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+                style={{ backgroundColor: 'rgba(194,105,42,0.1)', color: 'var(--primary)' }}
+              >
+                <MapPin size={11} />
+                {loc}
+                <button type="button" onClick={() => removeSmallLocation(loc)} aria-label={`Remove ${loc}`} className="hover:opacity-70">
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+            {smallLocations.length === 0 && (
+              <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>No small locations added yet.</p>
+            )}
+          </div>
+          {smallLocDirty && (
+            <p className="text-xs mt-3 font-medium" style={{ color: '#D97706' }}>● Small locations changed — click Save Changes to publish</p>
+          )}
         </div>
 
         {/* Categories */}

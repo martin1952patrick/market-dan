@@ -72,7 +72,9 @@ export default function AllListings() {
 
   const filtered = useMemo(() => {
     const results = visibleProfiles?.filter((p) => {
-      const locMatch = selectedLocation === 'All' || p?.location === selectedLocation;
+      const locLower = selectedLocation.toLowerCase();
+      const smallMatch = (p?.smallLocations ?? []).some((s) => s.toLowerCase() === locLower);
+      const locMatch = selectedLocation === 'All' || p?.location === selectedLocation || smallMatch;
       const catMatch = selectedCategory === 'All' || p?.categories?.includes(selectedCategory);
       const subCatMatch =
         selectedSubCategory === 'All' ||
@@ -84,6 +86,7 @@ export default function AllListings() {
       const textMatch = searchText === '' ||
         p?.businessName?.toLowerCase()?.includes(searchText?.toLowerCase()) ||
         p?.location?.toLowerCase()?.includes(searchText?.toLowerCase()) ||
+        (p?.smallLocations ?? []).some((s) => s.toLowerCase().includes(searchText.toLowerCase())) ||
         p?.description?.toLowerCase()?.includes(searchText?.toLowerCase());
       return locMatch && catMatch && subCatMatch && typeMatch && textMatch;
     }) ?? [];

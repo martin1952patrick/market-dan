@@ -45,6 +45,7 @@ export interface ClientProfile {
   division: string;
   location: string;
   subLocation: string;
+  smallLocations?: string[]; // seller-managed small areas served, e.g. "87 Junction"
   description: string;
   avatar: string;
   avatarAlt: string;

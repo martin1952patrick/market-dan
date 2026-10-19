@@ -105,6 +105,24 @@ export default function ProfileDetailClient({ profile }: Props) {
           {profile.road && <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>· {profile.road}</span>}
         </div>
 
+        {(profile.smallLocations?.length ?? 0) > 0 && (
+          <div className="mb-3 px-3">
+            <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--muted-foreground)' }}>Also serving</p>
+            <div className="flex flex-wrap gap-1.5">
+              {profile.smallLocations?.map((sl) => (
+                <span
+                  key={`detail-small-loc-${sl}`}
+                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium border"
+                  style={{ borderColor: 'rgba(194,105,42,0.3)', color: 'var(--foreground)', backgroundColor: 'rgba(245,166,35,0.08)' }}
+                >
+                  <MapPin size={10} style={{ color: 'var(--primary)' }} />
+                  {sl}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-1.5 mb-4">
           {profile.categories.map((cat) => (
             <span key={`detail-cat-${cat}`} className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ backgroundColor: 'rgba(194,105,42,0.1)', color: 'var(--primary)' }}>
