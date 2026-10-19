@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, DM_Mono } from 'next/font/google';
 import '../styles/tailwind.css';
 import { AppProvider } from '@/lib/AppContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -25,9 +26,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  title: 'FurniMarket — Discover Local Furniture Sellers Near You',
+  title: 'Find Furniture Sellers Near You | FurniMarket',
   description:
-    'FurniMarket connects Nairobi furniture buyers with local sellers. Browse profiles by location, view photos and videos, and find your perfect piece today.',
+    'Browse local furniture businesses by location. View photos, videos, and descriptions — then contact sellers directly.',
   icons: {
     icon: [{ url: '/assets/images/Screenshot_6-9-2026_114941_-1788684740614.jpeg', type: 'image/jpeg' }],
     shortcut: '/assets/images/Screenshot_6-9-2026_114941_-1788684740614.jpeg',
@@ -83,9 +84,11 @@ export default function RootLayout({
         <script type="module" async src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Ffurniture2333back.builtwithrocket.new&_be=https%3A%2F%2Fappanalytics.rocket.new&_v=0.1.20" />
         <script type="module" defer src="https://static.rocket.new/rocket-shot.js?v=0.0.2" /></head>
       <body>
-        <AppProvider>
-          {children}
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>
+            {children}
+          </AppProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -5,6 +5,8 @@ import { ClientProfile, MediaItem } from '@/lib/mockData';
 import { useAppStore } from '@/lib/AppContext';
 import AppImage from '@/components/ui/AppImage';
 import { Toaster, toast } from 'sonner';
+import { watermarkImage } from '@/lib/watermark';
+import { dbService } from '@/lib/services/dbService';
 
 interface Props {
   profile: ClientProfile;
@@ -36,33 +38,38 @@ export default function MediaManager({ profile }: Props) {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
     if (!files.length) return;
     const canAdd = Math.min(files.length, remaining);
     if (canAdd === 0) return;
 
     setUploading(true);
-    setTimeout(() => {
-      const newItems: MediaItem[] = files.slice(0, canAdd).map((f, i) => ({
+    const newItems: MediaItem[] = [];
+    for (let i = 0; i < canAdd; i++) {
+      const original = files[i];
+      const isVideo = original.type.startsWith('video');
+      // Stamp every uploaded image with the "Nairobi Spot" watermark
+      const file = isVideo ? original : await watermarkImage(original);
+      const remoteUrl = await dbService.uploadListingMedia(file, profile.id);
+      newItems.push({
         id: `media-upload-${Date.now()}-${i}`,
-        type: f.type.startsWith('video') ? 'video' : 'image',
-        url: URL.createObjectURL(f),
-        alt: `Uploaded ${f.type.startsWith('video') ? 'video' : 'image'} — ${f.name}`,
-      }));
-      addMedia(profile.id, newItems);
-      setUploading(false);
-      const imgCount = newItems.filter((n) => n.type === 'image').length;
-      const vidCount = newItems.filter((n) => n.type === 'video').length;
-      const parts = [];
-      if (imgCount > 0) parts.push(`${imgCount} image${imgCount > 1 ? 's' : ''}`);
-      if (vidCount > 0) parts.push(`${vidCount} video${vidCount > 1 ? 's' : ''}`);
-      toast.success(`${parts.join(' and ')} uploaded`, {
-        description: 'Your media is now visible on your public listing.',
+        type: isVideo ? 'video' : 'image',
+        url: remoteUrl ?? URL.createObjectURL(file),
+        alt: `Uploaded ${isVideo ? 'video' : 'image'} — ${original.name}`,
       });
-    }, 1000);
-
-    e.target.value = '';
+    }
+    addMedia(profile.id, newItems);
+    setUploading(false);
+    const imgCount = newItems.filter((n) => n.type === 'image').length;
+    const vidCount = newItems.filter((n) => n.type === 'video').length;
+    const parts = [];
+    if (imgCount > 0) parts.push(`${imgCount} image${imgCount > 1 ? 's' : ''}`);
+    if (vidCount > 0) parts.push(`${vidCount} video${vidCount > 1 ? 's' : ''}`);
+    toast.success(`${parts.join(' and ')} uploaded`, {
+      description: 'Images carry the Nairobi Spot watermark and are now visible on your listing.',
+    });
   };
 
   const confirmDelete = (id: string) => setDeleteTarget(id);

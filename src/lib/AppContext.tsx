@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useRef } from 'react';
 import {
   CLIENT_PROFILES,
   LOCATIONS,
@@ -19,7 +19,9 @@ import {
   NearbyPlace,
   MicroLocation,
   VisibilityPackageConfig,
+  VisibilityPackageTier,
 } from '@/lib/mockData';
+import { dbService } from '@/lib/services/dbService';
 
 interface AppState {
   clients: ClientProfile[];
@@ -51,6 +53,7 @@ interface AppContextValue extends AppState {
   updateClientPassword: (id: string, newPassword: string) => void;
   adminUpdateClient: (id: string, data: Partial<ClientProfile>) => void;
   setSellerVisibilityPackage: (id: string, pkg: VisibilityPackageConfig) => void;
+  endSellerFreeTrial: (id: string) => void;
 
   // Admin: locations
   addLocation: (loc: Location) => void;
@@ -76,6 +79,7 @@ interface AppContextValue extends AppState {
   setShuffleInterval: (minutes: number) => void;
   setClientsPerPage: (count: number) => void;
   updateSiteSettings: (settings: Partial<SiteSettings>) => void;
+  setCompulsoryProductFields: (fields: string[]) => void;
 
   // Admin: nearby places
   addNearbyPlace: (place: NearbyPlace) => void;
@@ -139,6 +143,70 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { saveToStorage('furni_perpage', clientsPerPage); }, [clientsPerPage]);
   useEffect(() => { saveToStorage('furni_settings', siteSettings); }, [siteSettings]);
 
+  // --- Supabase sync: hydrate from the database (source of truth) on first load ---
+  const dbReady = React.useRef(false);
+  const lastSynced = React.useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [dbSellers, dbSettings, dbPrefs] = await Promise.all([
+        dbService.fetchSellers(),
+        dbService.fetchSiteSettings(),
+        dbService.fetchSetting<{ shuffle?: number; perPage?: number }>('display_prefs'),
+      ]);
+      if (cancelled) return;
+      dbReady.current = true;
+      if (dbSellers && dbSellers.length > 0) {
+        dbSellers.forEach((s) => { lastSynced.current[s.id] = JSON.stringify(s); });
+        setClients(dbSellers);
+      } else if (dbSellers && dbSellers.length === 0) {
+        // Empty database: seed it once from the current (local/default) sellers
+        setClients((prev) => [...prev]);
+      }
+      if (dbSettings && Object.keys(dbSettings).length > 0) {
+        setSiteSettings((prev) => ({ ...prev, ...dbSettings }));
+      }
+      if (dbPrefs?.shuffle) setShuffleIntervalMinutes(dbPrefs.shuffle);
+      if (dbPrefs?.perPage) setClientsPerPageState(dbPrefs.perPage);
+      dbReady.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Write-through: push changed sellers (and subscriptions) to Supabase
+  useEffect(() => {
+    if (!dbReady.current) return;
+    const currentIds = new Set(clients.map((c) => c.id));
+    clients.forEach((c) => {
+      const snapshot = JSON.stringify(c);
+      if (lastSynced.current[c.id] === snapshot) return;
+      const prevRaw = lastSynced.current[c.id];
+      lastSynced.current[c.id] = snapshot;
+      dbService.upsertSeller(c);
+      const prevPkg = prevRaw ? (JSON.parse(prevRaw) as ClientProfile).visibilityPackage : undefined;
+      if (c.visibilityPackage && JSON.stringify(prevPkg) !== JSON.stringify(c.visibilityPackage)) {
+        dbService.upsertSubscription(c);
+      }
+    });
+    Object.keys(lastSynced.current).forEach((id) => {
+      if (!currentIds.has(id)) {
+        delete lastSynced.current[id];
+        dbService.deleteSeller(id);
+      }
+    });
+  }, [clients]);
+
+  useEffect(() => {
+    if (!dbReady.current) return;
+    dbService.saveSiteSettings(siteSettings);
+  }, [siteSettings]);
+
+  useEffect(() => {
+    if (!dbReady.current) return;
+    dbService.saveSetting('display_prefs', { shuffle: shuffleIntervalMinutes, perPage: clientsPerPage });
+  }, [shuffleIntervalMinutes, clientsPerPage]);
+
   // --- Admin: clients ---
   const togglePin = useCallback((id: string) => {
     setClients((prev) => {
@@ -193,9 +261,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setSellerVisibilityPackage = useCallback((id: string, pkg: VisibilityPackageConfig) => {
     setClients((prev) => prev.map((c) =>
       c.id === id
-        ? { ...c, visibilityPackage: pkg, tier: pkg.tier, subscriptionExpiry: pkg.endDate, status: 'active' }
+        ? {
+            ...c,
+            visibilityPackage: pkg,
+            tier: pkg.tier,
+            subscriptionExpiry: pkg.endDate,
+            status: 'active',
+            // Track when free trial is first activated (only set once)
+            freeTrialActivatedAt: c.freeTrialActivatedAt ?? new Date().toISOString(),
+            freeTrialEnded: false,
+          }
         : c
     ));
+  }, []);
+
+  const endSellerFreeTrial = useCallback((id: string) => {
+    setClients((prev) => prev.map((c) => {
+      if (c.id !== id) return c;
+      // Expire the package to yesterday
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const expiredDate = yesterday.toISOString().split('T')[0];
+      const tier = (c.visibilityPackage?.tier ?? c.tier ?? 'standard') as VisibilityPackageTier;
+      const updatedPkg: VisibilityPackageConfig = {
+        tier,
+        startDate: c.visibilityPackage?.startDate ?? expiredDate,
+        endDate: expiredDate,
+        durationDays: c.visibilityPackage?.durationDays ?? 30,
+        setByAdmin: true,
+      };
+      return {
+        ...c,
+        visibilityPackage: updatedPkg,
+        subscriptionExpiry: expiredDate,
+        status: 'dormant',
+        freeTrialEnded: true,
+      };
+    }));
   }, []);
 
   const moveFeaturedUp = useCallback((id: string) => {
@@ -311,6 +413,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSiteSettings((prev) => ({ ...prev, ...settings }));
   }, []);
 
+  const setCompulsoryProductFields = useCallback((fields: string[]) => {
+    setSiteSettings((prev) => ({ ...prev, compulsoryProductFields: fields }));
+  }, []);
+
   // --- Admin: nearby places ---
   const addNearbyPlace = useCallback((place: NearbyPlace) => {
     setSiteSettings((prev) => ({
@@ -403,6 +509,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateClientPassword,
         adminUpdateClient,
         setSellerVisibilityPackage,
+        endSellerFreeTrial,
         moveFeaturedUp,
         moveFeaturedDown,
         addLocation,
@@ -420,6 +527,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setShuffleInterval,
         setClientsPerPage,
         updateSiteSettings,
+        setCompulsoryProductFields,
         addNearbyPlace,
         updateNearbyPlace,
         deleteNearbyPlace,

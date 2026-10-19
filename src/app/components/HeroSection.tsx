@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { Search, MapPin, ChevronDown } from 'lucide-react';
 import { useAppStore } from '@/lib/AppContext';
-import Link from 'next/link';
+
 
 export default function HeroSection() {
-  const { locations, setSearchLocation, siteSettings } = useAppStore();
+  const { locations, setSearchLocation, siteSettings, clients } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showMoreLocations, setShowMoreLocations] = useState(false);
@@ -13,6 +13,24 @@ export default function HeroSection() {
   const filtered = searchQuery.length > 0
     ? locations.filter(l => l.name.toLowerCase().includes(searchQuery.toLowerCase()) || l.area.toLowerCase().includes(searchQuery.toLowerCase()))
     : locations.slice(0, 6);
+
+  // Seller-added small locations (only from visible sellers) that match the query
+  const smallLocationMatches: { name: string; parent: string; count: number }[] = (() => {
+    if (searchQuery.trim().length === 0) return [];
+    const q = searchQuery.trim().toLowerCase();
+    const map = new Map<string, { name: string; parent: string; count: number }>();
+    (clients ?? []).forEach((c) => {
+      if (c?.hidden || !(c?.status === 'active' || c?.status === 'dormant')) return;
+      (c?.smallLocations ?? []).forEach((s) => {
+        if (!s.toLowerCase().includes(q)) return;
+        const key = s.toLowerCase();
+        const existing = map.get(key);
+        if (existing) existing.count += 1;
+        else map.set(key, { name: s, parent: c.location, count: 1 });
+      });
+    });
+    return Array.from(map.values()).slice(0, 8);
+  })();
 
   const handleSelect = (name: string) => {
     setSearchQuery(name);
@@ -103,7 +121,29 @@ export default function HeroSection() {
                     </span>
                   </button>
                 ))}
-                {filtered.length === 0 && (
+                {smallLocationMatches.length > 0 && (
+                  <div className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider border-t" style={{ color: 'var(--muted-foreground)', borderColor: 'var(--border)' }}>
+                    Small Locations
+                  </div>
+                )}
+                {smallLocationMatches.map((sl) => (
+                  <button
+                    key={`small-suggestion-${sl.name}`}
+                    onMouseDown={() => handleSelect(sl.name)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-muted text-left"
+                    style={{ color: 'var(--foreground)' }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <MapPin size={14} style={{ color: 'var(--primary)' }} />
+                      <span>{sl.name}</span>
+                      <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>near {sl.parent}</span>
+                    </span>
+                    <span className="text-xs font-mono tabular-nums px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+                      {sl.count}
+                    </span>
+                  </button>
+                ))}
+                {filtered.length === 0 && smallLocationMatches.length === 0 && (
                   <div className="px-4 py-3 text-sm" style={{ color: 'var(--muted-foreground)' }}>No matching areas found</div>
                 )}
               </div>
@@ -130,8 +170,8 @@ export default function HeroSection() {
                 onClick={() => setShowMoreLocations((v) => !v)}
                 className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all"
                 style={{
-                  backgroundColor: showMoreLocations ? '#F5A623' : 'rgba(250,248,245,0.18)',
-                  color: showMoreLocations ? '#1C1410' : 'rgba(250,248,245,0.9)',
+                  backgroundColor: showMoreLocations ? '#DC2626' : 'rgba(250,248,245,0.18)',
+                  color: showMoreLocations ? '#FFFFFF' : 'rgba(250,248,245,0.9)',
                 }}
               >
                 <span>More</span>
@@ -168,24 +208,6 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Micro Locations row — shown after Popular */}
-          {microLocations.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className="text-xs font-medium" style={{ color: 'rgba(250,248,245,0.5)' }}>We also serve:</span>
-              {microLocations.map((ml) => (
-                <button
-                  key={`micro-loc-${ml.id}`}
-                  onClick={() => handleSelect(ml.name)}
-                  className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
-                  style={{ backgroundColor: 'rgba(245,166,35,0.15)', color: 'rgba(250,248,245,0.75)', border: '1px solid rgba(245,166,35,0.25)' }}
-                  title={ml.description}
-                >
-                  {ml.name}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Types dropdown — row below Popular */}
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <span className="text-xs font-medium" style={{ color: 'rgba(250,248,245,0.5)' }}>Types:</span>
@@ -197,17 +219,6 @@ export default function HeroSection() {
                 window.dispatchEvent(new CustomEvent('furni-type-select', { detail: type }));
               }
             }} />
-          </div>
-
-          {/* Browse all furniture link */}
-          <div className="mt-4">
-            <Link
-              href="/furniture"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all"
-              style={{ backgroundColor: 'rgba(250,248,245,0.1)', color: 'rgba(250,248,245,0.85)', border: '1px solid rgba(250,248,245,0.2)' }}
-            >
-              Browse All Furniture by Category →
-            </Link>
           </div>
         </div>
       </div>

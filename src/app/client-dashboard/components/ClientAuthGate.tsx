@@ -7,14 +7,16 @@ import AppLogo from '@/components/ui/AppLogo';
 import {
   LOCATIONS,
   ClientProfile,
+  getProfileUrl,
 } from '@/lib/mockData';
 import { useAppStore } from '@/lib/AppContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface AuthGateProps {
   onAuth: (email: string) => void;
 }
 
-type Mode = 'login' | 'register';
+type Mode = 'login' | 'register' | 'forgot';
 
 interface LoginForm {
   email: string;
@@ -32,38 +34,119 @@ interface RegisterForm {
 }
 
 export default function ClientAuthGate({ onAuth }: AuthGateProps) {
-  const { clients, addClient, roads } = useAppStore();
+  const { clients, addClient, roads, updateClientPassword } = useAppStore();
   const [mode, setMode] = useState<Mode>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [registeredUrl, setRegisteredUrl] = useState<string | null>(null);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const loginForm = useForm<LoginForm>();
   const registerForm = useForm<RegisterForm>();
 
-  const handleLoginSubmit = (data: LoginForm) => {
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setResetMessage('');
+    const email = resetEmail.trim();
+    if (!email) {
+      setResetError('Please enter your email address.');
+      return;
+    }
+    if (resetNewPassword.length < 8) {
+      setResetError('New password must be at least 8 characters.');
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError('Passwords do not match.');
+      return;
+    }
+    const seller = clients.find((c) => c.email.toLowerCase() === email.toLowerCase());
+    if (!seller) {
+      setResetError('No seller account was found with this email address.');
+      return;
+    }
     setLoading(true);
-    setAuthError('');
+    updateClientPassword(seller.id, resetNewPassword);
+    setResetNewPassword('');
+    setResetConfirmPassword('');
+    setResetMessage('Your password has been changed. You can now sign in with your new password.');
+    loginForm.setValue('email', seller.email);
+    loginForm.setValue('password', '');
+    setLoading(false);
     setTimeout(() => {
-      const match = clients.find(
-        (c) => c.email.toLowerCase() === data.email.toLowerCase() && c.password === data.password
-      );
-      if (match) {
-        onAuth(match.email);
-      } else {
-        setAuthError('Incorrect email or password. Please try again.');
-      }
-      setLoading(false);
-    }, 700);
+      setMode('login');
+      setResetMessage('');
+    }, 1800);
   };
 
-  const handleRegisterSubmit = (data: RegisterForm) => {
+  const handleLoginSubmit = async (data: LoginForm) => {
     setLoading(true);
-    setTimeout(() => {
+    setAuthError('');
+    const match = clients.find(
+      (c) => c.email.toLowerCase() === data.email.toLowerCase() && c.password === data.password
+    );
+    let authedEmail: string | null = null;
+    try {
+      const supabase = createClient();
+      const { data: signIn, error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+      if (!error && signIn?.user) authedEmail = signIn.user.email ?? data.email;
+      if (error && match) {
+        // Existing seller without a Supabase account yet: create one so their changes sync to the database
+        await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: { data: { full_name: match.name, role: 'seller' } },
+        });
+        const retry = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+        if (!retry.error) authedEmail = data.email;
+      }
+    } catch {
+      // Fall through to local match below
+    }
+    const profileForAuth = authedEmail
+      ? clients.find((c) => c.email.toLowerCase() === authedEmail!.toLowerCase())
+      : null;
+    if (profileForAuth) {
+      onAuth(profileForAuth.email);
+    } else if (match) {
+      onAuth(match.email);
+    } else {
+      setAuthError('Incorrect email or password. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  const handleRegisterSubmit = async (data: RegisterForm) => {
+    setLoading(true);
+    {
       const existing = clients.find((c) => c.email.toLowerCase() === data.email.toLowerCase());
       if (existing) {
         registerForm.setError('email', { message: 'This email is already registered. Please sign in.' });
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: { data: { full_name: data.name, role: 'seller' } },
+        });
+        if (signUpError) {
+          registerForm.setError('email', { message: signUpError.message });
+          setLoading(false);
+          return;
+        }
+        await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+      } catch (e: any) {
+        registerForm.setError('email', { message: e?.message ?? 'Could not create account' });
         setLoading(false);
         return;
       }
@@ -103,14 +186,11 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
 
       addClient(newClient);
 
-      const slugify = (str: string) =>
-        str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      const profileUrl = `/${slugify(county)}/${slugify(data.road || 'main-road')}/${slugify(data.businessName)}/${slugify(data.subLocation || data.location)}/${newNumericId}`;
-      setRegisteredUrl(profileUrl);
+      setRegisteredUrl(getProfileUrl(newClient));
 
       setLoading(false);
       onAuth(data.email);
-    }, 1000);
+    }
   };
 
   return (
@@ -156,14 +236,53 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
 
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>
-              {mode === 'login' ? 'Welcome back' : 'Create your listing'}
+              {mode === 'login' ? 'Welcome back' : mode === 'forgot' ? 'Reset your password' : 'Create your listing'}
             </h1>
             <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-              {mode === 'login' ? 'Sign in to manage your profile' : 'Set up your seller profile in minutes'}
+              {mode === 'login' ? 'Sign in to manage your profile' : mode === 'forgot' ? 'Enter your email and choose a new password' : 'Set up your seller profile in minutes'}
             </p>
           </div>
 
-          {mode === 'login' ? (
+          {mode === 'forgot' ? (
+            <form onSubmit={handleForgotSubmit} className="flex flex-col gap-5">
+              {resetError && (
+                <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>{resetError}</div>
+              )}
+              {resetMessage && (
+                <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>{resetMessage}</div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Email Address</label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="input-base w-full pl-10 pr-4 py-3 text-sm" placeholder="your@email.com" required />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>New Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type={showPassword ? 'text' : 'password'} value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)} className="input-base w-full pl-10 pr-10 py-3 text-sm" placeholder="At least 8 characters" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} aria-label="Toggle password visibility">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Confirm New Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type={showPassword ? 'text' : 'password'} value={resetConfirmPassword} onChange={(e) => setResetConfirmPassword(e.target.value)} className="input-base w-full pl-10 pr-4 py-3 text-sm" placeholder="Repeat new password" required />
+                </div>
+              </div>
+              <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full disabled:opacity-60">
+                {loading ? 'Saving…' : 'Change Password'}
+              </button>
+              <p className="text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                <button type="button" onClick={() => { setMode('login'); setResetError(''); setResetMessage(''); }} className="font-semibold transition-colors" style={{ color: 'var(--primary)' }}>Back to sign in</button>
+              </p>
+            </form>
+          ) : mode === 'login' ? (
             <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)} className="flex flex-col gap-5">
               {authError && (
                 <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>
@@ -190,6 +309,16 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
                   </button>
                 </div>
                 {loginForm.formState.errors.password && <p className="text-xs mt-1.5" style={{ color: '#DC2626' }}>{loginForm.formState.errors.password.message}</p>}
+                <div className="text-right mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => { setResetEmail(loginForm.getValues('email') ?? ''); setMode('forgot'); }}
+                    className="text-xs font-semibold transition-colors"
+                    style={{ color: 'var(--primary)' }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full mt-1 disabled:opacity-60">

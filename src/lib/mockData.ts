@@ -18,7 +18,7 @@ export interface MicroLocation {
 export interface VisibilityPackageConfig {
   tier: VisibilityPackageTier;
   startDate: string; // ISO date string
-  endDate: string;   // ISO date string
+  endDate: string; // ISO date string
   durationDays: number;
   setByAdmin?: boolean;
 }
@@ -45,6 +45,7 @@ export interface ClientProfile {
   division: string;
   location: string;
   subLocation: string;
+  smallLocations?: string[]; // seller-managed small areas served, e.g. "87 Junction"
   description: string;
   avatar: string;
   avatarAlt: string;
@@ -62,6 +63,25 @@ export interface ClientProfile {
   verified?: boolean;
   tier?: ListingTier;
   visibilityPackage?: VisibilityPackageConfig;
+  freeTrialActivatedAt?: string; // ISO date string — set when seller activates free trial
+  freeTrialEnded?: boolean; // true when admin ends trial or 30 days elapsed
+  // Product detail fields
+  itemType?: string;
+  weight?: string;
+  dimensions?: string;
+  material?: string;
+  colour?: string;
+  style?: string;
+  roomPlacement?: string;
+  furnitureType?: string;
+  condition?: string;
+  warranty?: string;
+  origin?: string;
+  delivery?: string;
+  assembly?: string;
+  paymentMethods?: string;
+  // Which product detail fields are enabled/visible on public profile
+  enabledProductFields?: string[];
 }
 
 export interface Location {
@@ -155,7 +175,7 @@ export const CLIENT_PROFILES: ClientProfile[] = [
   subLocation: 'Kinoo Market',
   description:
   'Handcrafted solid mahogany and teak furniture made to order. Specialising in dining sets, bedroom suites, and custom wardrobes. Over 12 years of craftsmanship serving Nairobi and surrounding areas. We offer free delivery within 20km and a 2-year structural warranty on all pieces.',
-  avatar: "https://images.unsplash.com/photo-1687422810663-c316494f725a",
+  avatar: "https://images.unsplash.com/photo-1597078107996-f4c621173a4a",
   avatarAlt: 'James Mwangi, owner of Mwangi Furniture Works, smiling in workshop',
   media: [
   { id: 'media-001-1', type: 'image', url: "https://img.rocket.new/generatedImages/rocket_gen_img_16be3c6c2-1772173142757.png", alt: 'Solid mahogany dining table set with six chairs in showroom' },
@@ -188,7 +208,7 @@ export const CLIENT_PROFILES: ClientProfile[] = [
   subLocation: 'Westlands Ring Road',
   description:
   'Contemporary furniture imports and local designs. Sofas, coffee tables, TV units, and office furniture. We source premium materials from Italy and Malaysia, combining them with local craftsmanship. Showroom open Monday–Saturday 9am–6pm in Westlands.',
-  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1451b1b92-1763297278458.png",
+  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_141e51895-1763296519617.png",
   avatarAlt: 'Amina Hassan, furniture business owner, professional portrait',
   media: [
   { id: 'media-002-1', type: 'image', url: "https://images.unsplash.com/photo-1721613886942-b0a2989b8f46", alt: 'Modern grey sectional sofa in bright living room' },
@@ -254,10 +274,10 @@ export const CLIENT_PROFILES: ClientProfile[] = [
   subLocation: 'Thika Town',
   description:
   'Affordable quality furniture for every budget. Large showroom with 200+ pieces on display. Sofas, beds, dining sets, and children\'s furniture. Layaway plans available. We deliver across Nairobi and Kiambu County.',
-  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1a2573a78-1772251097324.png",
+  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1d3e218f1-1773085528466.png",
   avatarAlt: 'Grace Njeri, furniture shop owner, warm smile portrait',
   media: [
-  { id: 'media-004-1', type: 'image', url: "https://images.unsplash.com/photo-1549194456-8dc62d481b47", alt: 'Large furniture showroom with multiple sofa sets on display' },
+  { id: 'media-004-1', type: 'image', url: "https://images.unsplash.com/photo-1703250151890-9d299b88e886", alt: 'Large furniture showroom with multiple sofa sets on display' },
   { id: 'media-004-2', type: 'image', url: "https://img.rocket.new/generatedImages/rocket_gen_img_1bc09eb69-1772271756552.png", alt: 'Affordable three-piece sofa set in brown leather' },
   { id: 'media-004-3', type: 'image', url: "https://images.unsplash.com/photo-1722603931794-b92901acd088", alt: 'Children\'s bedroom set with bunk bed and study desk' }],
 
@@ -382,7 +402,7 @@ export const CLIENT_PROFILES: ClientProfile[] = [
   subLocation: '1st Avenue',
   description:
   'The largest furniture selection in Eastleigh. Imported and locally made furniture at wholesale prices. Visit our 3-storey showroom on 1st Avenue.',
-  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_175b8bcec-1763301248327.png",
+  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1ed4c1572-1763295037377.png",
   avatarAlt: 'Lucy Achieng, furniture mall manager, professional photo',
   media: [
   { id: 'media-008-1', type: 'image', url: "https://img.rocket.new/generatedImages/rocket_gen_img_12ffab3c5-1766965960567.png", alt: 'Multi-storey furniture showroom interior with various displays' },
@@ -413,7 +433,7 @@ export const CLIENT_PROFILES: ClientProfile[] = [
   subLocation: 'Rongai Centre',
   description:
   'Traditional Kenyan woodcraft furniture. Kiondo-inspired designs, carved chairs, and decorative pieces. Perfect for homes that want authentic African character.',
-  avatar: "https://images.unsplash.com/photo-1722622426335-fa97ce92bff8",
+  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_4cdcb0e92-1791111908416.png",
   avatarAlt: 'David Mutua, traditional woodcraft artisan, workshop portrait',
   media: [
   { id: 'media-009-1', type: 'image', url: "https://images.unsplash.com/photo-1566760980567-132d9f9e4d6d", alt: 'Carved wooden African-style chair with intricate patterns' }],
@@ -475,7 +495,7 @@ export const CLIENT_PROFILES: ClientProfile[] = [
   subLocation: 'Langata Road',
   description:
   'Complete home furnishing solutions. Furniture, curtains, carpets, and home accessories under one roof. We do full home setups for new homeowners and apartments.',
-  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_14a5ca983-1763300171126.png",
+  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1373c1c56-1763291648235.png",
   avatarAlt: 'Hassan Ochieng, home depot owner, professional portrait',
   media: [
   { id: 'media-011-1', type: 'image', url: "https://images.unsplash.com/photo-1721394748916-9e9b1c7bd913", alt: 'Complete living room setup with sofa, curtains and carpet' },
@@ -506,7 +526,7 @@ export const CLIENT_PROFILES: ClientProfile[] = [
   subLocation: 'Donholm Phase 5',
   description:
   'Children\'s furniture specialists. Safe, colourful, and durable bedroom sets, study desks, toy storage, and play tables designed specifically for kids aged 2–12.',
-  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_16b7f3773-1772140653588.png",
+  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_451fe4393-1791111907410.png",
   avatarAlt: 'Esther Karimi, children\'s furniture specialist, warm portrait',
   media: [
   { id: 'media-012-1', type: 'image', url: "https://images.unsplash.com/photo-1697543383021-64b43a6552bd", alt: 'Colourful children\'s bedroom with bunk bed and toy storage' },
@@ -553,6 +573,39 @@ export const CLIENT_PROFILES: ClientProfile[] = [
   categories: ['Sofas', 'Custom Orders', 'Living Room'],
   views: 124,
   subscriptionExpiry: '2027-09-01'
+},
+{
+  id: 'client-014',
+  numericId: 14,
+  name: 'Evans Ochieng',
+  businessName: 'Evans Ochieng Furniture',
+  email: 'evans@ochiengfurniture.co.ke',
+  password: 'Evans@2026',
+  phone: '+254 711 222 333',
+  county: 'Nairobi',
+  road: 'Ngong Road',
+  subcounty: 'Langata',
+  division: "Lang'ata",
+  location: "Lang'ata",
+  subLocation: "Lang'ata Shopping Centre",
+  description:
+  "Quality furniture at affordable prices. Specialising in living room sets, bedroom furniture, and dining tables. We offer free delivery within Nairobi and a 1-year warranty on all products. Visit our showroom along Ngong Road.",
+  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_112193a91-1763294779964.png",
+  avatarAlt: 'Evans Ochieng, furniture business owner, professional portrait',
+  media: [
+  { id: 'media-014-1', type: 'image', url: "https://img.rocket.new/generatedImages/rocket_gen_img_193a8b75c-1785500918094.png", alt: 'Modern living room sofa set in grey fabric with wooden legs' },
+  { id: 'media-014-2', type: 'image', url: "https://img.rocket.new/generatedImages/rocket_gen_img_16be3c6c2-1772173142757.png", alt: 'Dining table set with six chairs in natural oak finish' },
+  { id: 'media-014-3', type: 'image', url: "https://img.rocket.new/generatedImages/rocket_gen_img_106d16631-1772752383799.png", alt: 'Bedroom furniture set with wardrobe and bedside tables' }],
+
+  uploadLimit: 3,
+  status: 'active',
+  hidden: false,
+  featured: false,
+  featuredOrder: null,
+  joinedDate: '2024-10-01',
+  categories: ['Sofas', 'Bedroom', 'Dining Sets'],
+  views: 341,
+  subscriptionExpiry: '2027-10-01'
 }];
 
 
@@ -625,30 +678,32 @@ export interface SiteSettings {
   metaTitle: string;
   nearbyPlaces: NearbyPlace[];
   microLocations: MicroLocation[];
+  compulsoryProductFields?: string[];
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteHeading: 'Find Furniture Sellers Near You',
   metaTitle: 'FurniMarket Kenya — Find Furniture Sellers Near You',
+  compulsoryProductFields: [],
   nearbyPlaces: [
-    { id: 'np-001', name: 'Dagoretti Corner', locationId: 'loc-karen', description: 'Shopping hub near Karen' },
-    { id: 'np-002', name: 'Hardy', locationId: 'loc-karen', description: 'Upmarket area adjacent to Karen' },
-    { id: 'np-003', name: 'Langata', locationId: 'loc-karen', description: 'Residential area near Karen' },
-    { id: 'np-004', name: 'Parklands', locationId: 'loc-westlands', description: 'Residential suburb near Westlands' },
-    { id: 'np-005', name: 'Lavington', locationId: 'loc-westlands', description: 'Upscale area near Westlands' },
-    { id: 'np-006', name: 'Loresho', locationId: 'loc-westlands', description: 'Quiet suburb near Westlands' },
-    { id: 'np-007', name: 'Githurai', locationId: 'loc-kasarani', description: 'Busy market area near Kasarani' },
-    { id: 'np-008', name: 'Roysambu', locationId: 'loc-kasarani', description: 'Residential area near Kasarani' },
-    { id: 'np-009', name: 'Kahawa', locationId: 'loc-kasarani', description: 'University area near Kasarani' },
-    { id: 'np-010', name: 'Limuru', locationId: 'loc-kinoo', description: 'Tea-growing town near Kinoo' },
-    { id: 'np-011', name: 'Kabete', locationId: 'loc-kinoo', description: 'Agricultural area near Kinoo' },
-  ],
+  { id: 'np-001', name: 'Dagoretti Corner', locationId: 'loc-karen', description: 'Shopping hub near Karen' },
+  { id: 'np-002', name: 'Hardy', locationId: 'loc-karen', description: 'Upmarket area adjacent to Karen' },
+  { id: 'np-003', name: 'Langata', locationId: 'loc-karen', description: 'Residential area near Karen' },
+  { id: 'np-004', name: 'Parklands', locationId: 'loc-westlands', description: 'Residential suburb near Westlands' },
+  { id: 'np-005', name: 'Lavington', locationId: 'loc-westlands', description: 'Upscale area near Westlands' },
+  { id: 'np-006', name: 'Loresho', locationId: 'loc-westlands', description: 'Quiet suburb near Westlands' },
+  { id: 'np-007', name: 'Githurai', locationId: 'loc-kasarani', description: 'Busy market area near Kasarani' },
+  { id: 'np-008', name: 'Roysambu', locationId: 'loc-kasarani', description: 'Residential area near Kasarani' },
+  { id: 'np-009', name: 'Kahawa', locationId: 'loc-kasarani', description: 'University area near Kasarani' },
+  { id: 'np-010', name: 'Limuru', locationId: 'loc-kinoo', description: 'Tea-growing town near Kinoo' },
+  { id: 'np-011', name: 'Kabete', locationId: 'loc-kinoo', description: 'Agricultural area near Kinoo' }],
+
   microLocations: [
-    { id: 'ml-001', name: 'Uthiru', description: 'Small area along Waiyaki Way' },
-    { id: 'ml-002', name: 'Kabete', description: 'Agricultural area near Kinoo' },
-    { id: 'ml-003', name: 'Muguga', description: 'Quiet residential area off Waiyaki Way' },
-    { id: 'ml-004', name: 'Sigona', description: 'Golf club area near Kikuyu' },
-  ],
+  { id: 'ml-001', name: 'Uthiru', description: 'Small area along Waiyaki Way' },
+  { id: 'ml-002', name: 'Kabete', description: 'Agricultural area near Kinoo' },
+  { id: 'ml-003', name: 'Muguga', description: 'Quiet residential area off Waiyaki Way' },
+  { id: 'ml-004', name: 'Sigona', description: 'Golf club area near Kikuyu' }]
+
 };
 
 export const LOCATION_DISTRIBUTION = [
