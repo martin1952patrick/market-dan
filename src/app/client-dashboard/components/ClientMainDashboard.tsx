@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, User, Image, Eye, MessageSquare, LogOut, Menu, X, Home, Bell, ChevronRight, CreditCard, Copy, CheckCheck, Phone, Loader2, CheckCircle2, Link2, Tag, Package, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, User, Image, Eye, MessageSquare, LogOut, Menu, X, Home, Bell, ChevronRight, CreditCard, Copy, CheckCheck, Phone, Loader2, CheckCircle2, Link2, Tag, Package, AlertCircle, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
 import ProfileEditor from './ProfileEditor';
@@ -8,6 +8,7 @@ import MediaManager from './MediaManager';
 import ListingPreview from './ListingPreview';
 import VisibilityPackage from './VisibilityPackage';
 import MessagesInbox from './MessagesInbox';
+import SmallLocationsManager from './SmallLocationsManager';
 import { dbService } from '@/lib/services/dbService';
 import { useAppStore } from '@/lib/AppContext';
 import { getProfileUrl } from '@/lib/mockData';
@@ -31,7 +32,7 @@ interface Props {
   onLogout: () => void;
 }
 
-type Tab = 'overview' | 'profile' | 'media' | 'preview' | 'visibility' | 'messages';
+type Tab = 'overview' | 'profile' | 'locations' | 'media' | 'preview' | 'visibility' | 'messages';
 
 // MPesa STK Push Modal — accepts dynamic amount
 function MpesaModal({ onClose, businessName, amount, label }: { onClose: () => void; businessName: string; amount?: number; label?: string }) {
@@ -187,6 +188,7 @@ export default function ClientMainDashboard({ userEmail, onLogout }: Props) {
   const navItems: { id: Tab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={18} /> },
     { id: 'profile', label: 'Edit Profile', icon: <User size={18} /> },
+    { id: 'locations', label: 'Small Locations', icon: <MapPin size={18} />, badge: (profile.smallLocations?.length ?? 0) > 0 ? String(profile.smallLocations?.length) : undefined },
     { id: 'media', label: 'Media & Photos', icon: <Image size={18} />, badge: `${profile.media.length}/${profile.uploadLimit}` },
     { id: 'messages', label: 'Messages', icon: <MessageSquare size={18} />, badge: unreadCount > 0 ? String(unreadCount) : undefined },
     { id: 'visibility', label: 'Visibility Package', icon: <Package size={18} /> },
@@ -351,6 +353,7 @@ export default function ClientMainDashboard({ userEmail, onLogout }: Props) {
             />
           )}
           {activeTab === 'profile' && <ProfileEditor profile={profile} />}
+          {activeTab === 'locations' && <SmallLocationsManager profile={profile} />}
           {activeTab === 'media' && <MediaManager profile={profile} />}
           {activeTab === 'messages' && <MessagesInbox sellerId={profile.id} onUnreadChange={setUnreadCount} />}
           {activeTab === 'visibility' && (
@@ -465,6 +468,27 @@ function ClientOverview({ profile, completeness, profileUrl, fullProfileUrl, onN
           </div>
         </div>
       )}
+
+      {/* Small locations shortcut */}
+      <div className="rounded-xl border p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4" style={{ backgroundColor: 'rgba(194,105,42,0.06)', borderColor: 'rgba(194,105,42,0.3)' }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(194,105,42,0.12)', color: 'var(--primary)' }}>
+          <MapPin size={18} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm mb-0.5" style={{ color: 'var(--foreground)' }}>
+            Small Locations{(profile.smallLocations?.length ?? 0) > 0 ? ` (${profile.smallLocations?.length})` : ''}
+          </p>
+          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+            {(profile.smallLocations?.length ?? 0) > 0
+              ? `Serving: ${profile.smallLocations?.join(', ')}`
+              : 'Add the small areas, stages or estates you serve so nearby buyers can find you.'}
+          </p>
+        </div>
+        <button onClick={() => onNavigate('locations')} className="btn-primary px-4 py-2 text-sm flex-shrink-0 flex items-center gap-1.5">
+          <MapPin size={14} />
+          {(profile.smallLocations?.length ?? 0) > 0 ? 'Manage' : 'Add Small Locations'}
+        </button>
+      </div>
 
       {/* Profile URL card */}
       <div className="rounded-xl border p-4 sm:p-5 mb-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
@@ -626,9 +650,10 @@ function ClientOverview({ profile, completeness, profileUrl, fullProfileUrl, onN
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Edit Profile Info', desc: 'Update name, description, contact', tab: 'profile' as Tab, icon: <User size={20} /> },
+          { label: 'Small Locations', desc: 'Add areas & stages you serve', tab: 'locations' as Tab, icon: <MapPin size={20} /> },
           { label: 'Manage Photos', desc: 'Upload or remove images and videos', tab: 'media' as Tab, icon: <Image size={20} /> },
           { label: 'Preview Listing', desc: 'See how buyers see your profile', tab: 'preview' as Tab, icon: <Eye size={20} /> },
         ].map((action) => (
