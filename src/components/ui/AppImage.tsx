@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, memo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, memo } from 'react';
 import Image from 'next/image';
+import {
+    getCachedWatermarkSettings,
+    loadWatermarkSettings,
+    positionToFlex,
+    subscribeWatermarkSettings,
+    WatermarkSettings,
+} from '@/lib/watermark';
 
 interface AppImageProps {
     src: string;
@@ -26,26 +33,46 @@ interface AppImageProps {
 const WATERMARK_TEXT = 'Nairobi Spot';
 const WATERMARK_MIN_WIDTH = 200;
 
-const WatermarkOverlay = () => (
-    <div
-        aria-hidden="true"
-        className="pointer-events-none select-none absolute inset-0 overflow-hidden flex items-center justify-center"
-        style={{ zIndex: 1 }}
-    >
-        <span
-            className="font-bold whitespace-nowrap"
-            style={{
-                color: 'rgba(255,255,255,0.6)',
-                fontSize: 'clamp(12px, 9%, 40px)',
-                textShadow: '0 1px 4px rgba(0,0,0,0.55)',
-                fontFamily: 'sans-serif',
-                transform: 'rotate(-10deg)',
-            }}
+const WatermarkOverlay = () => {
+    const [settings, setSettings] = useState<WatermarkSettings>(getCachedWatermarkSettings());
+
+    useEffect(() => {
+        let active = true;
+        loadWatermarkSettings().then((s) => {
+            if (active) setSettings(s);
+        });
+        const unsub = subscribeWatermarkSettings((s) => {
+            if (active) setSettings(s);
+        });
+        return () => {
+            active = false;
+            unsub();
+        };
+    }, []);
+
+    const flex = positionToFlex(settings.position);
+
+    return (
+        <div
+            aria-hidden="true"
+            className="pointer-events-none select-none absolute inset-0 overflow-hidden flex p-[4%]"
+            style={{ zIndex: 1, ...flex }}
         >
-            {WATERMARK_TEXT}
-        </span>
-    </div>
-);
+            <span
+                className="font-bold whitespace-nowrap"
+                style={{
+                    color: `rgba(255,255,255,${settings.opacity})`,
+                    fontSize: 'clamp(12px, 9%, 40px)',
+                    textShadow: '0 1px 4px rgba(0,0,0,0.55)',
+                    fontFamily: 'sans-serif',
+                    transform: 'rotate(-10deg)',
+                }}
+            >
+                {WATERMARK_TEXT}
+            </span>
+        </div>
+    );
+};
 
 const AppImage = memo(function AppImage({
     src,

@@ -4,6 +4,7 @@ import { Settings, Shuffle, Users, Check, Clock, Type, Globe, AlertCircle } from
 import { useAppStore } from '@/lib/AppContext';
 import { Toaster, toast } from 'sonner';
 import AdminWhatsAppSettings from './AdminWhatsAppSettings';
+import AdminWatermarkSettings from './AdminWatermarkSettings';
 
 const SHUFFLE_OPTIONS = [
   { label: '15 minutes', value: 15 },
@@ -220,6 +221,8 @@ export default function AdminSettings() {
 
         {/* Shuffle interval */}
         <AdminWhatsAppSettings />
+
+        <AdminWatermarkSettings />
 
         <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-4">
