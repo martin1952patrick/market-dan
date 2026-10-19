@@ -33,13 +33,15 @@ interface RegisterForm {
 }
 
 export default function ClientAuthGate({ onAuth }: AuthGateProps) {
-  const { clients, addClient, roads } = useAppStore();
+  const { clients, addClient, roads, updateClientPassword } = useAppStore();
   const [mode, setMode] = useState<Mode>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [registeredUrl, setRegisteredUrl] = useState<string | null>(null);
   const [resetEmail, setResetEmail] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
   const [resetMessage, setResetMessage] = useState('');
   const [resetError, setResetError] = useState('');
 
@@ -55,21 +57,31 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
       setResetError('Please enter your email address.');
       return;
     }
-    setLoading(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) {
-        setResetError(error.message);
-      } else {
-        setResetMessage('If an account exists for this email, a password reset link has been sent. Check your inbox.');
-      }
-    } catch (err: any) {
-      setResetError(err?.message ?? 'Could not send reset email. Please try again.');
+    if (resetNewPassword.length < 8) {
+      setResetError('New password must be at least 8 characters.');
+      return;
     }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError('Passwords do not match.');
+      return;
+    }
+    const seller = clients.find((c) => c.email.toLowerCase() === email.toLowerCase());
+    if (!seller) {
+      setResetError('No seller account was found with this email address.');
+      return;
+    }
+    setLoading(true);
+    updateClientPassword(seller.id, resetNewPassword);
+    setResetNewPassword('');
+    setResetConfirmPassword('');
+    setResetMessage('Your password has been changed. You can now sign in with your new password.');
+    loginForm.setValue('email', seller.email);
+    loginForm.setValue('password', '');
     setLoading(false);
+    setTimeout(() => {
+      setMode('login');
+      setResetMessage('');
+    }, 1800);
   };
 
   const handleLoginSubmit = async (data: LoginForm) => {
@@ -229,7 +241,7 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
               {mode === 'login' ? 'Welcome back' : mode === 'forgot' ? 'Reset your password' : 'Create your listing'}
             </h1>
             <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-              {mode === 'login' ? 'Sign in to manage your profile' : mode === 'forgot' ? 'We will email you a link to set a new password' : 'Set up your seller profile in minutes'}
+              {mode === 'login' ? 'Sign in to manage your profile' : mode === 'forgot' ? 'Enter your email and choose a new password' : 'Set up your seller profile in minutes'}
             </p>
           </div>
 
@@ -248,8 +260,25 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
                   <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="input-base w-full pl-10 pr-4 py-3 text-sm" placeholder="your@email.com" required />
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>New Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type={showPassword ? 'text' : 'password'} value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)} className="input-base w-full pl-10 pr-10 py-3 text-sm" placeholder="At least 8 characters" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} aria-label="Toggle password visibility">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Confirm New Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type={showPassword ? 'text' : 'password'} value={resetConfirmPassword} onChange={(e) => setResetConfirmPassword(e.target.value)} className="input-base w-full pl-10 pr-4 py-3 text-sm" placeholder="Repeat new password" required />
+                </div>
+              </div>
               <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full disabled:opacity-60">
-                {loading ? 'Sending…' : 'Send Reset Link'}
+                {loading ? 'Saving…' : 'Change Password'}
               </button>
               <p className="text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
                 <button type="button" onClick={() => { setMode('login'); setResetError(''); setResetMessage(''); }} className="font-semibold transition-colors" style={{ color: 'var(--primary)' }}>Back to sign in</button>
