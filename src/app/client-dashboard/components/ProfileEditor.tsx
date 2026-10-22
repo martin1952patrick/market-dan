@@ -56,7 +56,7 @@ const PRODUCT_DETAIL_FIELDS: { name: keyof ProfileFormData; label: string; place
 ];
 
 export default function ProfileEditor({ profile }: Props) {
-  const { locations, divisions, updateClientProfile, siteSettings } = useAppStore();
+  const { locations, divisions, roads, updateClientProfile, siteSettings } = useAppStore();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(profile.categories);
@@ -94,6 +94,8 @@ export default function ProfileEditor({ profile }: Props) {
       businessName: profile.businessName,
       email: profile.email,
       phone: profile.phone,
+      road: profile.road || '',
+      subLocation: profile.subLocation || '',
       subcounty: profile.subcounty || '',
       division: profile.division || '',
       location: profile.location,
@@ -143,8 +145,12 @@ export default function ProfileEditor({ profile }: Props) {
   const onSubmit = (data: ProfileFormData) => {
     setSaving(true);
     setTimeout(() => {
+      const selectedLoc = locations.find((l) => l.name === data.location);
+      const county = selectedLoc?.area || data.location || profile.county;
       updateClientProfile(profile.id, {
         ...data,
+        county,
+        subLocation: data.subLocation?.trim() || data.location,
         categories: selectedCategories,
         smallLocations,
         enabledProductFields: Array.from(enabledFields),
@@ -223,6 +229,26 @@ export default function ProfileEditor({ profile }: Props) {
             <span className="ml-2">e.g. <code className="font-mono">/kiambu/mwangi-furniture/kiambu/kikuyu/kinoo/1</code></span>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+            <div>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Road / Corridor <span style={{ color: '#DC2626' }}>*</span></label>
+              <div className="relative">
+                <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                <select {...register('road', { required: 'Road / corridor is required' })} className="input-base w-full pl-9 pr-4 py-2.5 text-sm appearance-none cursor-pointer">
+                  <option value="">Select road/corridor…</option>
+                  {roads.map((r) => (
+                    <option key={`editor-road-${r.id}`} value={r.name}>{r.name} ({r.county})</option>
+                  ))}
+                </select>
+              </div>
+              {errors.road && <p className="text-xs mt-1.5" style={{ color: '#DC2626' }}>{errors.road.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Sub-location / Street</label>
+              <input type="text" {...register('subLocation')} className="input-base w-full px-3 py-2.5 text-sm" placeholder="e.g. Kinoo Market" />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Sub-County <span style={{ color: '#DC2626' }}>*</span></label>
@@ -262,7 +288,8 @@ export default function ProfileEditor({ profile }: Props) {
               <p className="text-xs mb-2" style={{ color: 'var(--muted-foreground)' }}>e.g. Kinoo, Kikuyu Town</p>
               <div className="relative">
                 <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
-                <select {...register('location', { required: 'Area is required' })} className="input-base w-full pl-9 pr-4 py-2.5 text-sm appearance-none cursor-pointer">
+                <select {...register('location', { required: 'Main location is required' })} className="input-base w-full pl-9 pr-4 py-2.5 text-sm appearance-none cursor-pointer">
+                  <option value="">Select main location…</option>
                   {locations.map((loc) => (
                     <option key={`editor-loc-${loc.id}`} value={loc.name}>{loc.name} — {loc.area}</option>
                   ))}

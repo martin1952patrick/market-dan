@@ -1,11 +1,11 @@
 'use client';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, LogIn, UserPlus, Mail, Lock, MapPin } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus, Mail, Lock } from 'lucide-react';
 import AppLogo from '@/components/ui/AppLogo';
+import Link from 'next/link';
 
 import {
-  LOCATIONS,
   ClientProfile,
   getProfileUrl,
 } from '@/lib/mockData';
@@ -28,13 +28,12 @@ interface RegisterForm {
   businessName: string;
   email: string;
   password: string;
-  road: string;
-  location: string;
-  subLocation: string;
+  confirmPassword: string;
+  acceptTerms: boolean;
 }
 
 export default function ClientAuthGate({ onAuth }: AuthGateProps) {
-  const { clients, addClient, roads, updateClientPassword } = useAppStore();
+  const { clients, addClient, updateClientPassword } = useAppStore();
   const [mode, setMode] = useState<Mode>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -155,9 +154,6 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
       const newNumericId = maxId + 1;
       const newId = `client-${String(newNumericId).padStart(3, '0')}`;
 
-      const selectedLoc = LOCATIONS.find((l) => l.name === data.location);
-      const county = selectedLoc?.area || data.location;
-
       const newClient: ClientProfile = {
         id: newId,
         numericId: newNumericId,
@@ -166,10 +162,10 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
         email: data.email,
         password: data.password,
         phone: '',
-        county,
-        road: data.road || '',
-        location: data.location,
-        subLocation: data.subLocation || data.location,
+        county: '',
+        road: '',
+        location: '',
+        subLocation: '',
         description: '',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
         avatarAlt: `${data.name} profile photo`,
@@ -334,8 +330,8 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
             <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)} className="flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Your Name</label>
-                  <input type="text" {...registerForm.register('name', { required: 'Name is required' })} className="input-base w-full px-3 py-3 text-sm" placeholder="James Mwangi" />
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Username</label>
+                  <input type="text" {...registerForm.register('name', { required: 'Username is required' })} className="input-base w-full px-3 py-3 text-sm" placeholder="jamesmwangi" />
                   {registerForm.formState.errors.name && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.name.message}</p>}
                 </div>
                 <div>
@@ -362,39 +358,35 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
                 {registerForm.formState.errors.password && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.password.message}</p>}
               </div>
 
-              {/* Road / Corridor */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Road / Corridor</label>
-                <div className="relative">
-                  <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
-                  <select {...registerForm.register('road', { required: 'Road is required' })} className="input-base w-full pl-9 pr-4 py-3 text-sm appearance-none">
-                    <option value="">Select road/corridor…</option>
-                    {roads.map((r) => (
-                      <option key={`reg-road-${r.id}`} value={r.name}>{r.name} ({r.county})</option>
-                    ))}
-                  </select>
-                </div>
-                {registerForm.formState.errors.road && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.road.message}</p>}
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Confirm Password</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  {...registerForm.register('confirmPassword', {
+                    required: 'Please confirm your password',
+                    validate: (value) => value === registerForm.getValues('password') || 'Passwords do not match',
+                  })}
+                  className="input-base w-full px-3 py-3 text-sm"
+                  placeholder="Repeat your password"
+                />
+                {registerForm.formState.errors.confirmPassword && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.confirmPassword.message}</p>}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Main Location</label>
-                  <div className="relative">
-                    <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
-                    <select {...registerForm.register('location', { required: 'Location is required' })} className="input-base w-full pl-9 pr-4 py-3 text-sm appearance-none">
-                      <option value="">Select area…</option>
-                      {LOCATIONS.map((loc) => (
-                        <option key={`reg-loc-${loc.id}`} value={loc.name}>{loc.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {registerForm.formState.errors.location && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.location.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Sub-location / Street</label>
-                  <input type="text" {...registerForm.register('subLocation')} className="input-base w-full px-3 py-3 text-sm" placeholder="e.g. Kinoo Market" />
-                </div>
+              <div>
+                <label className="flex items-start gap-2.5 text-sm cursor-pointer" style={{ color: 'var(--muted-foreground)' }}>
+                  <input
+                    type="checkbox"
+                    {...registerForm.register('acceptTerms', { required: 'You must accept the Privacy Policy and Terms & Conditions' })}
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer"
+                  />
+                  <span>
+                    I agree to the{' '}
+                    <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: 'var(--primary)' }}>Privacy Policy</Link>
+                    {' '}and{' '}
+                    <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: 'var(--primary)' }}>Terms &amp; Conditions</Link>
+                  </span>
+                </label>
+                {registerForm.formState.errors.acceptTerms && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.acceptTerms.message}</p>}
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full mt-1 disabled:opacity-60">

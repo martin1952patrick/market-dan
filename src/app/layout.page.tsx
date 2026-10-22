@@ -67,6 +67,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${plusJakartaSans.variable} ${dmMono.variable}`}>
       <head>
+        <meta name="rating" content="adult" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

@@ -54,8 +54,8 @@ export default function PublicFooter() {
         <div className="border-t mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs" style={{ borderColor: '#2D1E14', color: '#6B5648' }}>
           <span>© 2026 FurniMarket Kenya. All rights reserved.</span>
           <div className="flex gap-4">
-            <Link href="/" className="hover:text-amber-400 transition-colors">Privacy Policy</Link>
-            <Link href="/" className="hover:text-amber-400 transition-colors">Terms of Service</Link>
+            <Link href="/terms" className="hover:text-amber-400 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-amber-400 transition-colors">Terms of Service</Link>
             <Link href="/admin-dashboard" className="hover:text-amber-400 transition-colors">Admin</Link>
           </div>
         </div>
