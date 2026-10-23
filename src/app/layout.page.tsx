@@ -4,6 +4,7 @@ import { Plus_Jakarta_Sans, DM_Mono } from 'next/font/google';
 import '../styles/tailwind.css';
 import { AppProvider } from '@/lib/AppContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import AgeConsentBanner from '@/components/AgeConsentBanner';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -88,6 +89,7 @@ export default function RootLayout({
         <AuthProvider>
           <AppProvider>
             {children}
+            <AgeConsentBanner />
           </AppProvider>
         </AuthProvider>
       </body>
