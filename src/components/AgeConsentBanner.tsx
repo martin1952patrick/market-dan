@@ -38,19 +38,20 @@ export default function AgeConsentBanner() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-[100] flex justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)' }}
       role="dialog"
-      aria-modal="false"
+      aria-modal="true"
       aria-labelledby="age-consent-title"
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border shadow-2xl p-4 sm:p-5"
-        style={{ backgroundColor: 'var(--card, #ffffff)', borderColor: 'var(--border, #e5e7eb)' }}
+        className="w-full max-w-lg rounded-2xl border shadow-2xl p-5 sm:p-7"
+        style={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb' }}
       >
-        <h2 id="age-consent-title" className="text-base font-bold mb-1.5" style={{ color: '#DC2626' }}>
+        <h2 id="age-consent-title" className="text-xl font-bold mb-2" style={{ color: '#DC2626' }}>
           Adults Only (18+)
         </h2>
-        <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--foreground, #1c1410)' }}>
+        <p className="text-sm sm:text-base leading-relaxed mb-5" style={{ color: '#1c1410' }}>
           This site is for people over 18 years old who are of legal consent age, understand what they do, and are
           responsible for the agreements they make with other people, and who have the legal right to make their own decisions.
         </p>
@@ -59,7 +60,7 @@ export default function AgeConsentBanner() {
             type="button"
             onClick={() => save('rejected')}
             className="px-5 py-2.5 rounded-lg text-sm font-bold border"
-            style={{ borderColor: 'var(--border, #e5e7eb)', color: 'var(--foreground, #1c1410)', backgroundColor: 'transparent' }}
+            style={{ borderColor: '#d1d5db', color: '#1c1410', backgroundColor: 'transparent' }}
           >
             Reject
           </button>
