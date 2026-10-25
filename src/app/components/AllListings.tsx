@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import { MapPin, Eye, Search, X, Lock, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
+import { MapPin, Eye, Search, X, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppStore } from '@/lib/AppContext';
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
@@ -17,11 +17,11 @@ const TYPE_OPTIONS = ['All Types', 'Full Set', 'Partial Set', 'Standalone'];
 // Categories that support sub-options
 const CATEGORIES_WITH_SUBS = ['Sofas', 'Bedroom', 'Dining Sets', 'Office', "Children\'s"];
 
-const TIER_CONFIG: Record<NonNullable<ListingTier>, { label: string; bg: string; text: string }> = {
-  elite: { label: 'Elite', bg: '#D4AF37', text: '#1C1410' },
-  spotlight: { label: 'Spotlight', bg: '#E91E8C', text: '#FFFFFF' },
-  premium: { label: 'Premium', bg: '#7C3AED', text: '#FFFFFF' },
-  standard: { label: 'Standard', bg: '#1C1410', text: '#FFFFFF' },
+const TIER_CONFIG: Record<NonNullable<ListingTier>, { label: string; bg: string; text: string; ribbonPos: 'top-left' | 'bottom-right' }> = {
+  elite: { label: 'Elite', bg: '#D4AF37', text: '#1C1410', ribbonPos: 'bottom-right' },
+  spotlight: { label: 'Spotlight', bg: '#E91E8C', text: '#FFFFFF', ribbonPos: 'bottom-right' },
+  premium: { label: 'Premium Top', bg: '#D4AF37', text: '#1C1410', ribbonPos: 'bottom-right' },
+  standard: { label: 'Standard', bg: '#1C1410', text: '#FFFFFF', ribbonPos: 'top-left' },
 };
 
 export default function AllListings() {
@@ -72,7 +72,17 @@ export default function AllListings() {
 
   const filtered = useMemo(() => {
     const results = visibleProfiles?.filter((p) => {
-      const locMatch = selectedLocation === 'All' || p?.location === selectedLocation;
+      const locLower = selectedLocation.trim().toLowerCase();
+      const smallMatch = (p?.smallLocations ?? []).some((s) => {
+        const sl = s.trim().toLowerCase();
+        if (!sl) return false;
+        return sl === locLower || sl.includes(locLower) || locLower.includes(sl);
+      });
+      const locMatch =
+        selectedLocation === 'All' ||
+        p?.location === selectedLocation ||
+        (locLower.length >= 3 && p?.location?.toLowerCase()?.includes(locLower)) ||
+        smallMatch;
       const catMatch = selectedCategory === 'All' || p?.categories?.includes(selectedCategory);
       const subCatMatch =
         selectedSubCategory === 'All' ||
@@ -84,6 +94,7 @@ export default function AllListings() {
       const textMatch = searchText === '' ||
         p?.businessName?.toLowerCase()?.includes(searchText?.toLowerCase()) ||
         p?.location?.toLowerCase()?.includes(searchText?.toLowerCase()) ||
+        (p?.smallLocations ?? []).some((s) => s.toLowerCase().includes(searchText.toLowerCase())) ||
         p?.description?.toLowerCase()?.includes(searchText?.toLowerCase());
       return locMatch && catMatch && subCatMatch && typeMatch && textMatch;
     }) ?? [];
@@ -125,7 +136,7 @@ export default function AllListings() {
           </h2>
           <p className="text-sm mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
             {filtered?.length} seller{filtered?.length !== 1 ? 's' : ''} found
-            {selectedLocation !== 'All' ? ` in ${selectedLocation}` : ''}
+            {selectedLocation !== 'All' ? <span style={{ color: '#DC2626' }}> in {selectedLocation}</span> : ''}
             {totalPages > 1 && ` · Page ${safePage} of ${totalPages}`}
           </p>
         </div>
@@ -282,43 +293,74 @@ export default function AllListings() {
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
 
-                      {/* Verified badge — top-right corner, right-angle flush */}
-                      {profile?.verified && (
+                      {/* Tier ribbon — diagonal top-right for all tiers */}
+                      {profile?.tier && (
                         <div
-                          className="absolute top-0 right-0 flex items-center gap-1 px-2 py-1 text-xs font-bold"
-                          style={{
-                            backgroundColor: '#1D4ED8',
-                            color: '#FFFFFF',
-                            borderBottomLeftRadius: '8px',
-                          }}
+                          className="absolute top-0 right-0 overflow-hidden"
+                          style={{ width: 80, height: 80, pointerEvents: 'none' }}
                         >
-                          <ShieldCheck size={11} />
-                          Verified
+                          <div
+                            className="absolute flex items-center justify-center font-black text-xs tracking-wide"
+                            style={{
+                              backgroundColor:
+                                profile?.tier === 'elite' ? '#D4AF37' :
+                                profile?.tier === 'spotlight' ? '#E91E8C' :
+                                profile?.tier === 'premium'? '#D4AF37' : '#1C1410',
+                              color:
+                                profile?.tier === 'elite' ? '#1C1410' :
+                                profile?.tier === 'spotlight' ? '#FFFFFF' :
+                                profile?.tier === 'premium'? '#1C1410' : '#FFFFFF',
+                              width: 110,
+                              top: 20,
+                              right: -28,
+                              transform: 'rotate(45deg)',
+                              padding: '3px 0',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                              fontSize: 9,
+                            }}
+                          >
+                            {profile?.tier === 'elite' ? 'ELITE' :
+                             profile?.tier === 'spotlight' ? 'SPOTLIGHT' :
+                             profile?.tier === 'premium'? 'PREMIUM' : 'STANDARD'}
+                          </div>
                         </div>
                       )}
 
-                      {/* Tier badge — bottom-left corner, right-angle flush */}
-                      {tierCfg && (
-                        <div
-                          className="absolute bottom-0 left-0 px-2 py-1 text-xs font-bold"
-                          style={{
-                            backgroundColor: tierCfg.bg,
-                            color: tierCfg.text,
-                            borderTopRightRadius: '8px',
-                          }}
-                        >
-                          {tierCfg.label}
-                        </div>
-                      )}
-
-                      <div className="absolute top-2 right-2 flex gap-1.5">
-                        {profile?.featured && !profile?.verified && (
+                      {/* Featured star — only if no tier */}
+                      {profile?.featured && !profile?.tier && (
+                        <div className="absolute top-2 left-2">
                           <span className="featured-ribbon text-xs font-bold px-2 py-0.5 rounded-full" style={{ color: '#1C1410' }}>
                             ★ Featured
                           </span>
-                        )}
-                      </div>
-                      <div className="absolute bottom-2 left-2 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium" style={{ backgroundColor: 'rgba(28,20,16,0.65)', color: '#FAF8F5', marginLeft: tierCfg ? '70px' : '0' }}>
+                        </div>
+                      )}
+
+                      {/* Verified ribbon — blue diagonal bottom-left, above location pill */}
+                      {profile?.verified && (
+                        <div
+                          className="absolute bottom-0 left-0 overflow-hidden"
+                          style={{ width: 80, height: 80, pointerEvents: 'none' }}
+                        >
+                          <div
+                            className="absolute flex items-center justify-center font-black tracking-wide"
+                            style={{
+                              backgroundColor: '#1D4ED8',
+                              color: '#FFFFFF',
+                              width: 110,
+                              bottom: 20,
+                              left: -28,
+                              transform: 'rotate(45deg)',
+                              padding: '3px 0',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                              fontSize: 9,
+                            }}
+                          >
+                            VERIFIED
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium" style={{ backgroundColor: 'rgba(28,20,16,0.65)', color: '#FAF8F5' }}>
                         <MapPin size={10} />
                         {profile?.location}
                       </div>
@@ -459,6 +501,42 @@ export default function AllListings() {
                 </span>
                 {place.description && (
                   <span className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>{place.description}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* We Also Serve — micro locations shown below nearby places when a location is selected */}
+      {selectedLocation !== 'All' && (siteSettings?.microLocations ?? []).length > 0 && (
+        <div className="mt-6 rounded-2xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <MapPin size={18} style={{ color: 'var(--primary)' }} />
+            <h3 className="font-bold text-base" style={{ color: 'var(--foreground)' }}>
+              We Also Serve
+            </h3>
+          </div>
+          <p className="text-xs mb-3" style={{ color: 'var(--muted-foreground)' }}>
+            Areas near {selectedLocation} where you can also find furniture sellers:
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {(siteSettings?.microLocations ?? []).map((ml) => (
+              <button
+                key={`micro-serve-${ml.id}`}
+                onClick={() => {
+                  setSearchLocation(ml.name);
+                  setSelectedLocation(ml.name);
+                }}
+                className="flex flex-col items-start px-4 py-3 rounded-xl border transition-all card-hover text-left"
+                style={{ backgroundColor: 'rgba(245,166,35,0.06)', borderColor: 'rgba(245,166,35,0.3)' }}
+              >
+                <span className="flex items-center gap-1.5 font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
+                  <MapPin size={12} style={{ color: 'var(--primary)' }} />
+                  {ml.name}
+                </span>
+                {ml.description && (
+                  <span className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>{ml.description}</span>
                 )}
               </button>
             ))}

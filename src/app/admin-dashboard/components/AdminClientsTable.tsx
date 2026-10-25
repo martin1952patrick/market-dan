@@ -19,14 +19,15 @@ const TIER_OPTIONS: { value: ListingTier; label: string; bg: string; text: strin
 ];
 
 export default function AdminClientsTable() {
-  const { clients, togglePin, toggleStatus, toggleHidden, deleteClient, setUploadLimit, toggleVerified, setClientTier } = useAppStore();
+  const { clients, togglePin, toggleStatus, toggleHidden, deleteClient, setMediaLimits, toggleVerified, setClientTier } = useAppStore();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProfileStatus | 'all'>('all');
   const [sortField, setSortField] = useState<'name' | 'views' | 'joinedDate' | 'uploadLimit'>('joinedDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [limitTarget, setLimitTarget] = useState<{ id: string; current: number } | null>(null);
-  const [newLimit, setNewLimit] = useState(3);
+  const [limitTarget, setLimitTarget] = useState<{ id: string | 'all'; photos: number; videos: number } | null>(null);
+  const [newPhotos, setNewPhotos] = useState(3);
+  const [newVideos, setNewVideos] = useState(1);
   const [editTarget, setEditTarget] = useState<string | null>(null);
   const [showCreateSeller, setShowCreateSeller] = useState(false);
 
@@ -98,15 +99,20 @@ export default function AdminClientsTable() {
     setDeleteTarget(null);
   };
 
-  const openLimitModal = (id: string, current: number) => {
-    setLimitTarget({ id, current });
-    setNewLimit(current);
+  const openLimitModal = (id: string | 'all', photos: number, videos: number) => {
+    setLimitTarget({ id, photos, videos });
+    setNewPhotos(photos);
+    setNewVideos(videos);
   };
 
   const applyLimit = () => {
     if (!limitTarget) return;
-    setUploadLimit(limitTarget.id, newLimit);
-    toast.success(`Upload limit updated to ${newLimit} files`);
+    setMediaLimits(limitTarget.id, newPhotos, newVideos);
+    toast.success(
+      limitTarget.id === 'all'
+        ? `All sellers can now upload ${newPhotos} photos and ${newVideos} video${newVideos !== 1 ? 's' : ''}`
+        : `Limit updated to ${newPhotos} photos and ${newVideos} video${newVideos !== 1 ? 's' : ''}`
+    );
     setLimitTarget(null);
   };
 
@@ -145,6 +151,14 @@ export default function AdminClientsTable() {
             {clients.length} total sellers — control status, upload limits, featured placement, verified badge, tier, and full account editing
           </p>
         </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          onClick={() => openLimitModal('all', 6, 2)}
+          className="btn-secondary flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+        >
+          <SlidersHorizontal size={16} />
+          <span className="hidden sm:inline">Limits for All</span>
+        </button>
         <button
           onClick={() => setShowCreateSeller(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold flex-shrink-0 transition-all"
@@ -154,6 +168,7 @@ export default function AdminClientsTable() {
           <span className="hidden sm:inline">Create Seller</span>
           <span className="sm:hidden">New</span>
         </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -274,17 +289,17 @@ export default function AdminClientsTable() {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => openLimitModal(client.id, client.uploadLimit)}
+                        onClick={() => openLimitModal(client.id, client.photoLimit ?? 3, client.videoLimit ?? 1)}
                         className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-mono font-semibold transition-colors"
                         style={{ backgroundColor: 'rgba(194,105,42,0.1)', color: 'var(--primary)' }}
                         title="Adjust upload limit"
                       >
-                        {client.uploadLimit} files
+                        {client.photoLimit ?? 3} photos, {client.videoLimit ?? 1} video{(client.videoLimit ?? 1) !== 1 ? 's' : ''}
                       </button>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm tabular-nums font-mono" style={{ color: 'var(--foreground)' }}>
-                        {client.media.length}/{client.uploadLimit}
+                        {client.media.length}/{(client.photoLimit ?? 3) + (client.videoLimit ?? 1)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -422,25 +437,62 @@ export default function AdminClientsTable() {
       {limitTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(28,20,16,0.6)' }}>
           <div className="rounded-2xl border p-6 max-w-sm w-full shadow-modal" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <h3 className="font-bold text-base mb-1" style={{ color: 'var(--foreground)' }}>Adjust Upload Limit</h3>
-            <p className="text-sm mb-5" style={{ color: 'var(--muted-foreground)' }}>
-              Current limit: <strong>{limitTarget.current} files</strong>. Set a new limit (3–20).
+            <h3 className="font-bold text-base mb-1" style={{ color: 'var(--foreground)' }}>
+              {limitTarget.id === 'all' ? 'Upload Limit — All Sellers' : 'Adjust Upload Limit'}
+            </h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--muted-foreground)' }}>
+              Default is 3 photos and 1 video. Sellers who want more can be raised to 6 photos and 2 videos.
             </p>
-            <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="flex gap-2 mb-5">
               <button
-                onClick={() => setNewLimit((v) => Math.max(1, v - 1))}
+                onClick={() => { setNewPhotos(3); setNewVideos(1); }}
+                className="btn-secondary flex-1 py-2 text-xs"
+              >
+                Standard (3 + 1)
+              </button>
+              <button
+                onClick={() => { setNewPhotos(6); setNewVideos(2); }}
+                className="btn-secondary flex-1 py-2 text-xs"
+              >
+                Extended (6 + 2)
+              </button>
+            </div>
+            <p className="text-xs font-semibold mb-2 text-center" style={{ color: 'var(--muted-foreground)' }}>Photos</p>
+            <div className="flex items-center justify-center gap-4 mb-5">
+              <button
+                onClick={() => setNewPhotos((v) => Math.max(1, v - 1))}
                 className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
                 style={{ backgroundColor: 'var(--muted)', color: 'var(--foreground)' }}
-                aria-label="Decrease limit"
+                aria-label="Decrease photos limit"
               >
                 <Minus size={16} />
               </button>
-              <span className="text-3xl font-bold tabular-nums w-12 text-center" style={{ color: 'var(--foreground)' }}>{newLimit}</span>
+              <span className="text-3xl font-bold tabular-nums w-12 text-center" style={{ color: 'var(--foreground)' }}>{newPhotos}</span>
               <button
-                onClick={() => setNewLimit((v) => Math.min(20, v + 1))}
+                onClick={() => setNewPhotos((v) => Math.min(20, v + 1))}
                 className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
                 style={{ backgroundColor: 'var(--muted)', color: 'var(--foreground)' }}
-                aria-label="Increase limit"
+                aria-label="Increase photos limit"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+            <p className="text-xs font-semibold mb-2 text-center" style={{ color: 'var(--muted-foreground)' }}>Videos</p>
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <button
+                onClick={() => setNewVideos((v) => Math.max(0, v - 1))}
+                className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                style={{ backgroundColor: 'var(--muted)', color: 'var(--foreground)' }}
+                aria-label="Decrease videos limit"
+              >
+                <Minus size={16} />
+              </button>
+              <span className="text-3xl font-bold tabular-nums w-12 text-center" style={{ color: 'var(--foreground)' }}>{newVideos}</span>
+              <button
+                onClick={() => setNewVideos((v) => Math.min(20, v + 1))}
+                className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                style={{ backgroundColor: 'var(--muted)', color: 'var(--foreground)' }}
+                aria-label="Increase videos limit"
               >
                 <Plus size={16} />
               </button>

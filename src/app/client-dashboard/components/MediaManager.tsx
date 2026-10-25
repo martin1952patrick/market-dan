@@ -5,13 +5,15 @@ import { ClientProfile, MediaItem } from '@/lib/mockData';
 import { useAppStore } from '@/lib/AppContext';
 import AppImage from '@/components/ui/AppImage';
 import { Toaster, toast } from 'sonner';
+import { watermarkImage } from '@/lib/watermark';
+import { dbService } from '@/lib/services/dbService';
 
 interface Props {
   profile: ClientProfile;
 }
 
 export default function MediaManager({ profile }: Props) {
-  const { addMedia, removeMedia } = useAppStore();
+  const { addMedia, removeMedia, siteSettings } = useAppStore();
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
@@ -20,13 +22,17 @@ export default function MediaManager({ profile }: Props) {
 
   // Always read from profile (which comes from AppContext in parent)
   const media = profile.media;
-  const limit = profile.uploadLimit;
+  const photoLimit = profile.photoLimit ?? siteSettings?.defaultPhotoLimit ?? 3;
+  const videoLimit = profile.videoLimit ?? siteSettings?.defaultVideoLimit ?? 1;
+  const limit = photoLimit + videoLimit;
   const used = media.length;
-  const remaining = limit - used;
-  const quotaPct = Math.min(100, Math.round((used / limit) * 100));
 
   const imageCount = media.filter((m) => m.type === 'image').length;
   const videoCount = media.filter((m) => m.type === 'video').length;
+  const photosLeft = Math.max(0, photoLimit - imageCount);
+  const videosLeft = Math.max(0, videoLimit - videoCount);
+  const remaining = photosLeft + videosLeft;
+  const quotaPct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 100;
 
   const handleUploadClick = () => {
     if (remaining <= 0) {
@@ -36,33 +42,58 @@ export default function MediaManager({ profile }: Props) {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
     if (!files.length) return;
-    const canAdd = Math.min(files.length, remaining);
-    if (canAdd === 0) return;
+
+    // Keep only files that fit within the separate photo / video limits
+    let imgSlots = photosLeft;
+    let vidSlots = videosLeft;
+    const accepted: File[] = [];
+    let skipped = 0;
+    for (const f of files) {
+      if (f.type.startsWith('video')) {
+        if (vidSlots > 0) { accepted.push(f); vidSlots--; } else skipped++;
+      } else if (imgSlots > 0) {
+        accepted.push(f); imgSlots--;
+      } else {
+        skipped++;
+      }
+    }
+    if (skipped > 0) {
+      toast.error(`${skipped} file${skipped > 1 ? 's' : ''} skipped`, {
+        description: `Your limit is ${photoLimit} photo${photoLimit !== 1 ? 's' : ''} and ${videoLimit} video${videoLimit !== 1 ? 's' : ''}.`,
+      });
+    }
+    if (accepted.length === 0) return;
+    const canAdd = accepted.length;
 
     setUploading(true);
-    setTimeout(() => {
-      const newItems: MediaItem[] = files.slice(0, canAdd).map((f, i) => ({
+    const newItems: MediaItem[] = [];
+    for (let i = 0; i < canAdd; i++) {
+      const original = accepted[i];
+      const isVideo = original.type.startsWith('video');
+      // Stamp every uploaded image with the "nairobispot.com" watermark
+      const file = isVideo ? original : await watermarkImage(original);
+      const remoteUrl = await dbService.uploadListingMedia(file, profile.id);
+      newItems.push({
         id: `media-upload-${Date.now()}-${i}`,
-        type: f.type.startsWith('video') ? 'video' : 'image',
-        url: URL.createObjectURL(f),
-        alt: `Uploaded ${f.type.startsWith('video') ? 'video' : 'image'} — ${f.name}`,
-      }));
-      addMedia(profile.id, newItems);
-      setUploading(false);
-      const imgCount = newItems.filter((n) => n.type === 'image').length;
-      const vidCount = newItems.filter((n) => n.type === 'video').length;
-      const parts = [];
-      if (imgCount > 0) parts.push(`${imgCount} image${imgCount > 1 ? 's' : ''}`);
-      if (vidCount > 0) parts.push(`${vidCount} video${vidCount > 1 ? 's' : ''}`);
-      toast.success(`${parts.join(' and ')} uploaded`, {
-        description: 'Your media is now visible on your public listing.',
+        type: isVideo ? 'video' : 'image',
+        url: remoteUrl ?? URL.createObjectURL(file),
+        alt: `Uploaded ${isVideo ? 'video' : 'image'} — ${original.name}`,
       });
-    }, 1000);
-
-    e.target.value = '';
+    }
+    addMedia(profile.id, newItems);
+    setUploading(false);
+    const imgCount = newItems.filter((n) => n.type === 'image').length;
+    const vidCount = newItems.filter((n) => n.type === 'video').length;
+    const parts = [];
+    if (imgCount > 0) parts.push(`${imgCount} image${imgCount > 1 ? 's' : ''}`);
+    if (vidCount > 0) parts.push(`${vidCount} video${vidCount > 1 ? 's' : ''}`);
+    toast.success(`${parts.join(' and ')} uploaded`, {
+      description: 'Images carry the nairobispot.com watermark and are now visible on your listing.',
+    });
   };
 
   const confirmDelete = (id: string) => setDeleteTarget(id);
@@ -116,7 +147,7 @@ export default function MediaManager({ profile }: Props) {
         <div className="flex items-center justify-between">
           <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
             {remaining > 0
-              ? `${remaining} slot${remaining !== 1 ? 's' : ''} remaining — upload images (JPG, PNG, WebP) or videos (MP4, MOV)`
+              ? `${photosLeft} photo${photosLeft !== 1 ? 's' : ''} and ${videosLeft} video${videosLeft !== 1 ? 's' : ''} remaining — images (JPG, PNG, WebP) or videos (MP4, MOV)`
               : 'All upload slots are used. Contact support to request an increase.'}
           </p>
           <div className="flex items-center gap-3 flex-shrink-0 ml-4">
@@ -157,7 +188,7 @@ export default function MediaManager({ profile }: Props) {
               </div>
             </div>
             <p className="font-semibold text-sm mb-1" style={{ color: 'var(--foreground)' }}>
-              {remaining > 0 ? `Upload up to ${remaining} more file${remaining !== 1 ? 's' : ''}` : 'Upload limit reached'}
+              {remaining > 0 ? `Upload up to ${photosLeft} photo${photosLeft !== 1 ? 's' : ''} and ${videosLeft} video${videosLeft !== 1 ? 's' : ''}` : 'Upload limit reached'}
             </p>
             <p className="text-xs mb-2" style={{ color: 'var(--muted-foreground)' }}>Click to browse — JPG, PNG, WebP, MP4, MOV supported</p>
             <div className="flex items-center gap-4 mt-1">

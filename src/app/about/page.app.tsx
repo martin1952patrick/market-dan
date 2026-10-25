@@ -16,16 +16,16 @@ export default function AboutPage() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
       <PublicTopbar />
       <main className="max-w-4xl mx-auto px-6 py-16">
-        <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>About FurniMarket</h1>
+        <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>About Nairobi Spot</h1>
         <p className="text-sm mb-10" style={{ color: 'var(--muted-foreground)' }}>Connecting furniture buyers with local sellers across Kenya.</p>
 
         <div className="rounded-xl border p-8 mb-10" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
           <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--foreground)' }}>Our Mission</h2>
           <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--muted-foreground)' }}>
-            FurniMarket was built to make it easy for Kenyans to discover quality furniture sellers in their local area. Whether you&apos;re looking for a custom sofa, a new bed frame, or a complete dining set, we connect you with trusted local craftsmen and furniture shops near you.
+            Nairobi Spot was built to make it easy for Kenyans to discover quality furniture sellers in their local area. Whether you&apos;re looking for a custom sofa, a new bed frame, or a complete dining set, we connect you with trusted local craftsmen and furniture shops near you.
           </p>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
-            We believe in supporting local businesses. By listing on FurniMarket, furniture sellers get a professional online presence and reach thousands of buyers searching for exactly what they offer — all without the complexity of building their own website.
+            We believe in supporting local businesses. By listing on Nairobi Spot, furniture sellers get a professional online presence and reach thousands of buyers searching for exactly what they offer — all without the complexity of building their own website.
           </p>
         </div>
 
@@ -42,7 +42,7 @@ export default function AboutPage() {
         </div>
 
         <div className="rounded-xl border p-8" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-          <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--foreground)' }}>Why Choose FurniMarket?</h2>
+          <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--foreground)' }}>Why Choose Nairobi Spot?</h2>
           <ul className="flex flex-col gap-3">
             {[
               'Browse hundreds of local furniture sellers in one place',

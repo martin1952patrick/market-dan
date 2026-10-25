@@ -28,7 +28,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="font-semibold text-sm mb-1" style={{ color: 'var(--foreground)' }}>Email</p>
-                <a href="mailto:hello@furnimarket.co.ke" className="text-sm" style={{ color: 'var(--primary)' }}>hello@furnimarket.co.ke</a>
+                <a href="mailto:hello@nairobispot.com" className="text-sm" style={{ color: 'var(--primary)' }}>hello@nairobispot.com</a>
               </div>
             </div>
             <div className="flex items-start gap-4">

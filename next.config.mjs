@@ -15,6 +15,8 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
+  devIndicators: false,
+
   eslint: {
     ignoreDuringBuilds: true,
   },

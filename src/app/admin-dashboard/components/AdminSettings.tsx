@@ -1,8 +1,10 @@
 'use client';
 import React, { useState } from 'react';
-import { Settings, Shuffle, Users, Check, Clock, Type, Globe } from 'lucide-react';
+import { Settings, Shuffle, Users, Check, Clock, Type, Globe, AlertCircle } from 'lucide-react';
 import { useAppStore } from '@/lib/AppContext';
 import { Toaster, toast } from 'sonner';
+import AdminWhatsAppSettings from './AdminWhatsAppSettings';
+import AdminWatermarkSettings from './AdminWatermarkSettings';
 
 const SHUFFLE_OPTIONS = [
   { label: '15 minutes', value: 15 },
@@ -16,17 +18,50 @@ const SHUFFLE_OPTIONS = [
 
 const PER_PAGE_OPTIONS = [10, 20, 30, 50, 100];
 
+const ALL_PRODUCT_FIELDS = [
+  { key: 'itemType', label: 'Item Type' },
+  { key: 'weight', label: 'Weight' },
+  { key: 'dimensions', label: 'Dimensions' },
+  { key: 'material', label: 'Material' },
+  { key: 'colour', label: 'Colour' },
+  { key: 'style', label: 'Style' },
+  { key: 'roomPlacement', label: 'Room Placement' },
+  { key: 'furnitureType', label: 'Type' },
+  { key: 'condition', label: 'Condition' },
+  { key: 'warranty', label: 'Warranty' },
+  { key: 'origin', label: 'Origin' },
+  { key: 'delivery', label: 'Delivery' },
+  { key: 'assembly', label: 'Assembly' },
+  { key: 'paymentMethods', label: 'Payment Methods' },
+];
+
 export default function AdminSettings() {
-  const { shuffleIntervalMinutes, clientsPerPage, setShuffleInterval, setClientsPerPage, siteSettings, updateSiteSettings } = useAppStore();
+  const { shuffleIntervalMinutes, clientsPerPage, setShuffleInterval, setClientsPerPage, siteSettings, updateSiteSettings, setCompulsoryProductFields } = useAppStore();
   const [localShuffle, setLocalShuffle] = useState(shuffleIntervalMinutes);
   const [localPerPage, setLocalPerPage] = useState(clientsPerPage);
   const [localHeading, setLocalHeading] = useState(siteSettings?.siteHeading ?? 'Find Furniture Sellers Near You');
-  const [localMetaTitle, setLocalMetaTitle] = useState(siteSettings?.metaTitle ?? 'FurniMarket Kenya — Find Furniture Sellers Near You');
+  const [localMetaTitle, setLocalMetaTitle] = useState(siteSettings?.metaTitle ?? 'Nairobi Spot — Find Furniture Sellers Near You');
+  const [compulsoryFields, setCompulsoryFields] = useState<Set<string>>(
+    new Set(siteSettings?.compulsoryProductFields ?? [])
+  );
+
+  const toggleCompulsory = (key: string) => {
+    setCompulsoryFields((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const handleSave = () => {
     setShuffleInterval(localShuffle);
     setClientsPerPage(localPerPage);
-    updateSiteSettings({ siteHeading: localHeading?.trim() || 'Find Furniture Sellers Near You', metaTitle: localMetaTitle?.trim() || 'FurniMarket Kenya' });
+    updateSiteSettings({
+      siteHeading: localHeading?.trim() || 'Find Furniture Sellers Near You',
+      metaTitle: localMetaTitle?.trim() || 'Nairobi Spot',
+    });
+    setCompulsoryProductFields(Array.from(compulsoryFields));
     toast?.success('Settings saved — changes are live across the site');
   };
 
@@ -34,7 +69,8 @@ export default function AdminSettings() {
     localShuffle !== shuffleIntervalMinutes ||
     localPerPage !== clientsPerPage ||
     localHeading !== siteSettings?.siteHeading ||
-    localMetaTitle !== siteSettings?.metaTitle;
+    localMetaTitle !== siteSettings?.metaTitle ||
+    JSON.stringify(Array.from(compulsoryFields).sort()) !== JSON.stringify((siteSettings?.compulsoryProductFields ?? []).slice().sort());
 
   return (
     <div className="max-w-2xl">
@@ -87,7 +123,7 @@ export default function AdminSettings() {
                 type="text"
                 value={localMetaTitle}
                 onChange={(e) => setLocalMetaTitle(e?.target?.value)}
-                placeholder="FurniMarket Kenya — Find Furniture Sellers Near You"
+                placeholder="Nairobi Spot — Find Furniture Sellers Near You"
                 className="input-base w-full px-3 py-2.5 text-sm"
               />
               <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>Shown in the browser tab and used by search engines. Keep under 60 characters for best SEO.</p>
@@ -95,7 +131,99 @@ export default function AdminSettings() {
           </div>
         </div>
 
+        {/* Compulsory Product Fields */}
+        <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(220,38,38,0.1)', color: '#DC2626' }}>
+              <AlertCircle size={18} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>Compulsory Product Fields</h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
+                Fields marked as compulsory will be required for all sellers to fill in before saving their profile.
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-4 px-3 py-2.5 rounded-lg text-xs flex items-center gap-2" style={{ backgroundColor: 'rgba(220,38,38,0.06)', borderLeft: '3px solid #DC2626' }}>
+            <AlertCircle size={13} style={{ color: '#DC2626', flexShrink: 0 }} />
+            <span style={{ color: '#DC2626' }}>
+              Ticked fields become <strong>required</strong> — every seller must fill them before saving their profile.
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {ALL_PRODUCT_FIELDS.map((field) => {
+              const isCompulsory = compulsoryFields.has(field.key);
+              return (
+                <label
+                  key={`comp-${field.key}`}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-all select-none"
+                  style={{
+                    borderColor: isCompulsory ? '#DC2626' : 'var(--border)',
+                    backgroundColor: isCompulsory ? 'rgba(220,38,38,0.04)' : 'var(--muted)',
+                  }}
+                >
+                  <div
+                    className="flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all"
+                    style={{
+                      borderColor: isCompulsory ? '#DC2626' : 'var(--muted-foreground)',
+                      backgroundColor: isCompulsory ? '#DC2626' : 'transparent',
+                    }}
+                  >
+                    {isCompulsory && (
+                      <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                        <path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={isCompulsory}
+                    onChange={() => toggleCompulsory(field.key)}
+                  />
+                  <span className="text-sm font-medium" style={{ color: isCompulsory ? '#DC2626' : 'var(--foreground)' }}>
+                    {field.label}
+                  </span>
+                  {isCompulsory && (
+                    <span className="ml-auto text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: '#DC2626', color: '#fff' }}>
+                      Required
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between text-xs" style={{ color: 'var(--muted-foreground)' }}>
+            <span>{compulsoryFields.size} of {ALL_PRODUCT_FIELDS.length} fields set as compulsory</span>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                className="underline text-xs"
+                style={{ color: '#DC2626' }}
+                onClick={() => setCompulsoryFields(new Set(ALL_PRODUCT_FIELDS.map((f) => f.key)))}
+              >
+                Mark all
+              </button>
+              <button
+                type="button"
+                className="underline text-xs"
+                style={{ color: 'var(--muted-foreground)' }}
+                onClick={() => setCompulsoryFields(new Set())}
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Shuffle interval */}
+        <AdminWhatsAppSettings />
+
+        <AdminWatermarkSettings />
+
         <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(245,166,35,0.15)', color: '#D97706' }}>

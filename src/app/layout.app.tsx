@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, DM_Mono } from 'next/font/google';
 import '../styles/tailwind.css';
 import { AppProvider } from '@/lib/AppContext';
+import AgeConsentBanner from '@/components/AgeConsentBanner';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -25,38 +26,53 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  title: 'FurniMarket — Discover Local Furniture Sellers Near You',
+  title: {
+    default: 'Nairobi Spot — Find Furniture Sellers Near You in Nairobi, Kenya',
+    template: '%s | Nairobi Spot',
+  },
   description:
-    'FurniMarket connects Nairobi furniture buyers with local sellers. Browse profiles by location, view photos and videos, and find your perfect piece today.',
+    'Nairobi Spot connects furniture buyers with local sellers across Nairobi, Kiambu and Kajiado. Search by area or small location, view photos and videos, and contact sellers directly.',
+  applicationName: 'Nairobi Spot',
+  keywords: [
+    'Nairobi Spot',
+    'nairobispot.com',
+    'furniture sellers Nairobi',
+    'furniture Kenya',
+    'buy furniture near me',
+    'sofas Nairobi',
+    'beds Nairobi',
+    'local furniture shops',
+  ],
+  robots: { index: true, follow: true },
   icons: {
-    icon: [{ url: '/assets/images/Screenshot_6-9-2026_114941_-1788684740614.jpeg', type: 'image/jpeg' }],
-    shortcut: '/assets/images/Screenshot_6-9-2026_114941_-1788684740614.jpeg',
-    apple: '/assets/images/Screenshot_6-9-2026_114941_-1788684740614.jpeg',
+    icon: [{ url: '/assets/images/better-1792968923560.png', type: 'image/png' }],
+    shortcut: '/assets/images/better-1792968923560.png',
+    apple: '/assets/images/better-1792968923560.png',
   },
   alternates: {
     canonical: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
   },
   openGraph: {
     type: 'website',
-    locale: 'en_US',
+    locale: 'en_KE',
     url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-    siteName: 'FurniMarket',
-    title: 'FurniMarket — Discover Local Furniture Sellers',
+    siteName: 'Nairobi Spot',
+    title: 'Nairobi Spot — Discover Local Furniture Sellers',
     description: 'Find local furniture sellers in Nairobi. Browse profiles, photos, and videos to discover your perfect piece.',
     images: [
       {
-        url: '/assets/images/app_logo.png',
+        url: '/assets/images/better-1792968923560.png',
         width: 1200,
         height: 630,
-        alt: 'FurniMarket - Local Furniture Marketplace',
+        alt: 'Nairobi Spot - Local Furniture Marketplace',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FurniMarket — Discover Local Furniture Sellers',
+    title: 'Nairobi Spot — Discover Local Furniture Sellers',
     description: 'Find local furniture sellers in Nairobi. Browse profiles, photos, and videos to discover your perfect piece.',
-    images: ['/assets/images/app_logo.png'],
+    images: ['/assets/images/better-1792968923560.png'],
   },
 };
 
@@ -66,17 +82,26 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${plusJakartaSans.variable} ${dmMono.variable}`}>
       <head>
+        <meta name="rating" content="adult" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'Organization',
-              name: 'FurniMarket',
-              url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-              description: 'Local furniture marketplace connecting buyers with sellers in Nairobi',
-              logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/assets/images/app_logo.png`,
-            }),
+            __html: JSON.stringify([
+              {
+                '@context': 'https://schema.org',
+                '@type': 'Organization',
+                name: 'Nairobi Spot',
+                url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+                description: 'Local furniture marketplace connecting buyers with sellers in Nairobi',
+                logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/assets/images/better-1792968923560.png`,
+              },
+              {
+                '@context': 'https://schema.org',
+                '@type': 'WebSite',
+                name: 'Nairobi Spot',
+                url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+              },
+            ]),
           }}
         />
 
@@ -85,6 +110,7 @@ export default function RootLayout({
       <body>
         <AppProvider>
           {children}
+          <AgeConsentBanner />
         </AppProvider>
       </body>
     </html>

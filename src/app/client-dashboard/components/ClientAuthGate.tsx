@@ -1,20 +1,22 @@
 'use client';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, LogIn, UserPlus, Mail, Lock, MapPin } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus, Mail, Lock } from 'lucide-react';
 import AppLogo from '@/components/ui/AppLogo';
+import Link from 'next/link';
 
 import {
-  LOCATIONS,
   ClientProfile,
+  getProfileUrl,
 } from '@/lib/mockData';
 import { useAppStore } from '@/lib/AppContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface AuthGateProps {
   onAuth: (email: string) => void;
 }
 
-type Mode = 'login' | 'register';
+type Mode = 'login' | 'register' | 'forgot';
 
 interface LoginForm {
   email: string;
@@ -26,41 +28,102 @@ interface RegisterForm {
   businessName: string;
   email: string;
   password: string;
-  road: string;
-  location: string;
-  subLocation: string;
+  confirmPassword: string;
+  acceptTerms: boolean;
 }
 
 export default function ClientAuthGate({ onAuth }: AuthGateProps) {
-  const { clients, addClient, roads } = useAppStore();
+  const { clients, addClient, updateClientPassword } = useAppStore();
   const [mode, setMode] = useState<Mode>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [registeredUrl, setRegisteredUrl] = useState<string | null>(null);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const loginForm = useForm<LoginForm>();
   const registerForm = useForm<RegisterForm>();
 
-  const handleLoginSubmit = (data: LoginForm) => {
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setResetMessage('');
+    const email = resetEmail.trim();
+    if (!email) {
+      setResetError('Please enter your email address.');
+      return;
+    }
+    if (resetNewPassword.length < 8) {
+      setResetError('New password must be at least 8 characters.');
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError('Passwords do not match.');
+      return;
+    }
+    const seller = clients.find((c) => c.email.toLowerCase() === email.toLowerCase());
+    if (!seller) {
+      setResetError('No seller account was found with this email address.');
+      return;
+    }
     setLoading(true);
-    setAuthError('');
+    updateClientPassword(seller.id, resetNewPassword);
+    setResetNewPassword('');
+    setResetConfirmPassword('');
+    setResetMessage('Your password has been changed. You can now sign in with your new password.');
+    loginForm.setValue('email', seller.email);
+    loginForm.setValue('password', '');
+    setLoading(false);
     setTimeout(() => {
-      const match = clients.find(
-        (c) => c.email.toLowerCase() === data.email.toLowerCase() && c.password === data.password
-      );
-      if (match) {
-        onAuth(match.email);
-      } else {
-        setAuthError('Incorrect email or password. Please try again.');
-      }
-      setLoading(false);
-    }, 700);
+      setMode('login');
+      setResetMessage('');
+    }, 1800);
   };
 
-  const handleRegisterSubmit = (data: RegisterForm) => {
+  const handleLoginSubmit = async (data: LoginForm) => {
     setLoading(true);
-    setTimeout(() => {
+    setAuthError('');
+    const match = clients.find(
+      (c) => c.email.toLowerCase() === data.email.toLowerCase() && c.password === data.password
+    );
+    let authedEmail: string | null = null;
+    try {
+      const supabase = createClient();
+      const { data: signIn, error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+      if (!error && signIn?.user) authedEmail = signIn.user.email ?? data.email;
+      if (error && match) {
+        // Existing seller without a Supabase account yet: create one so their changes sync to the database
+        await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: { data: { full_name: match.name, role: 'seller' } },
+        });
+        const retry = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+        if (!retry.error) authedEmail = data.email;
+      }
+    } catch {
+      // Fall through to local match below
+    }
+    const profileForAuth = authedEmail
+      ? clients.find((c) => c.email.toLowerCase() === authedEmail!.toLowerCase())
+      : null;
+    if (profileForAuth) {
+      onAuth(profileForAuth.email);
+    } else if (match) {
+      onAuth(match.email);
+    } else {
+      setAuthError('Incorrect email or password. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  const handleRegisterSubmit = async (data: RegisterForm) => {
+    setLoading(true);
+    {
       const existing = clients.find((c) => c.email.toLowerCase() === data.email.toLowerCase());
       if (existing) {
         registerForm.setError('email', { message: 'This email is already registered. Please sign in.' });
@@ -68,12 +131,28 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
         return;
       }
 
+      try {
+        const supabase = createClient();
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: { data: { full_name: data.name, role: 'seller' } },
+        });
+        if (signUpError) {
+          registerForm.setError('email', { message: signUpError.message });
+          setLoading(false);
+          return;
+        }
+        await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+      } catch (e: any) {
+        registerForm.setError('email', { message: e?.message ?? 'Could not create account' });
+        setLoading(false);
+        return;
+      }
+
       const maxId = Math.max(...clients.map((c) => c.numericId), 0);
       const newNumericId = maxId + 1;
       const newId = `client-${String(newNumericId).padStart(3, '0')}`;
-
-      const selectedLoc = LOCATIONS.find((l) => l.name === data.location);
-      const county = selectedLoc?.area || data.location;
 
       const newClient: ClientProfile = {
         id: newId,
@@ -83,15 +162,17 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
         email: data.email,
         password: data.password,
         phone: '',
-        county,
-        road: data.road || '',
-        location: data.location,
-        subLocation: data.subLocation || data.location,
+        county: '',
+        road: '',
+        location: '',
+        subLocation: '',
         description: '',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
         avatarAlt: `${data.name} profile photo`,
         media: [],
-        uploadLimit: 3,
+        uploadLimit: 4,
+        photoLimit: 3,
+        videoLimit: 1,
         status: 'active' as const,
         hidden: false,
         featured: false,
@@ -103,14 +184,11 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
 
       addClient(newClient);
 
-      const slugify = (str: string) =>
-        str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      const profileUrl = `/${slugify(county)}/${slugify(data.road || 'main-road')}/${slugify(data.businessName)}/${slugify(data.subLocation || data.location)}/${newNumericId}`;
-      setRegisteredUrl(profileUrl);
+      setRegisteredUrl(getProfileUrl(newClient));
 
       setLoading(false);
       onAuth(data.email);
-    }, 1000);
+    }
   };
 
   return (
@@ -121,7 +199,7 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
         <div className="relative">
           <div className="flex items-center gap-2 mb-12">
             <AppLogo size={40} />
-            <span className="text-2xl font-bold" style={{ color: '#FAF8F5' }}>FurniMarket</span>
+            <span className="text-2xl font-bold" style={{ color: '#FAF8F5' }}>Nairobi Spot</span>
           </div>
           <h2 className="text-4xl font-bold leading-tight mb-4" style={{ color: '#FAF8F5' }}>
             Grow your furniture<br />business online
@@ -151,19 +229,58 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
         <div className="max-w-md w-full mx-auto">
           <div className="flex items-center gap-2 mb-8 lg:hidden">
             <AppLogo size={32} />
-            <span className="text-xl font-bold" style={{ color: 'var(--primary)' }}>FurniMarket</span>
+            <span className="text-xl font-bold" style={{ color: 'var(--primary)' }}>Nairobi Spot</span>
           </div>
 
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>
-              {mode === 'login' ? 'Welcome back' : 'Create your listing'}
+              {mode === 'login' ? 'Welcome back' : mode === 'forgot' ? 'Reset your password' : 'Create your listing'}
             </h1>
             <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-              {mode === 'login' ? 'Sign in to manage your profile' : 'Set up your seller profile in minutes'}
+              {mode === 'login' ? 'Sign in to manage your profile' : mode === 'forgot' ? 'Enter your email and choose a new password' : 'Set up your seller profile in minutes'}
             </p>
           </div>
 
-          {mode === 'login' ? (
+          {mode === 'forgot' ? (
+            <form onSubmit={handleForgotSubmit} className="flex flex-col gap-5">
+              {resetError && (
+                <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>{resetError}</div>
+              )}
+              {resetMessage && (
+                <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>{resetMessage}</div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Email Address</label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="input-base w-full pl-10 pr-4 py-3 text-sm" placeholder="your@email.com" required />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>New Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type={showPassword ? 'text' : 'password'} value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)} className="input-base w-full pl-10 pr-10 py-3 text-sm" placeholder="At least 8 characters" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} aria-label="Toggle password visibility">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Confirm New Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+                  <input type={showPassword ? 'text' : 'password'} value={resetConfirmPassword} onChange={(e) => setResetConfirmPassword(e.target.value)} className="input-base w-full pl-10 pr-4 py-3 text-sm" placeholder="Repeat new password" required />
+                </div>
+              </div>
+              <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full disabled:opacity-60">
+                {loading ? 'Saving…' : 'Change Password'}
+              </button>
+              <p className="text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                <button type="button" onClick={() => { setMode('login'); setResetError(''); setResetMessage(''); }} className="font-semibold transition-colors" style={{ color: 'var(--primary)' }}>Back to sign in</button>
+              </p>
+            </form>
+          ) : mode === 'login' ? (
             <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)} className="flex flex-col gap-5">
               {authError && (
                 <div className="rounded-lg p-3 text-sm font-medium" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>
@@ -190,6 +307,16 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
                   </button>
                 </div>
                 {loginForm.formState.errors.password && <p className="text-xs mt-1.5" style={{ color: '#DC2626' }}>{loginForm.formState.errors.password.message}</p>}
+                <div className="text-right mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => { setResetEmail(loginForm.getValues('email') ?? ''); setMode('forgot'); }}
+                    className="text-xs font-semibold transition-colors"
+                    style={{ color: 'var(--primary)' }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full mt-1 disabled:opacity-60">
@@ -205,8 +332,8 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
             <form onSubmit={registerForm.handleSubmit(handleRegisterSubmit)} className="flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Your Name</label>
-                  <input type="text" {...registerForm.register('name', { required: 'Name is required' })} className="input-base w-full px-3 py-3 text-sm" placeholder="James Mwangi" />
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Username</label>
+                  <input type="text" {...registerForm.register('name', { required: 'Username is required' })} className="input-base w-full px-3 py-3 text-sm" placeholder="jamesmwangi" />
                   {registerForm.formState.errors.name && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.name.message}</p>}
                 </div>
                 <div>
@@ -233,39 +360,35 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
                 {registerForm.formState.errors.password && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.password.message}</p>}
               </div>
 
-              {/* Road / Corridor */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Road / Corridor</label>
-                <div className="relative">
-                  <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
-                  <select {...registerForm.register('road', { required: 'Road is required' })} className="input-base w-full pl-9 pr-4 py-3 text-sm appearance-none">
-                    <option value="">Select road/corridor…</option>
-                    {roads.map((r) => (
-                      <option key={`reg-road-${r.id}`} value={r.name}>{r.name} ({r.county})</option>
-                    ))}
-                  </select>
-                </div>
-                {registerForm.formState.errors.road && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.road.message}</p>}
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Confirm Password</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  {...registerForm.register('confirmPassword', {
+                    required: 'Please confirm your password',
+                    validate: (value) => value === registerForm.getValues('password') || 'Passwords do not match',
+                  })}
+                  className="input-base w-full px-3 py-3 text-sm"
+                  placeholder="Repeat your password"
+                />
+                {registerForm.formState.errors.confirmPassword && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.confirmPassword.message}</p>}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Main Location</label>
-                  <div className="relative">
-                    <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
-                    <select {...registerForm.register('location', { required: 'Location is required' })} className="input-base w-full pl-9 pr-4 py-3 text-sm appearance-none">
-                      <option value="">Select area…</option>
-                      {LOCATIONS.map((loc) => (
-                        <option key={`reg-loc-${loc.id}`} value={loc.name}>{loc.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {registerForm.formState.errors.location && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.location.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--foreground)' }}>Sub-location / Street</label>
-                  <input type="text" {...registerForm.register('subLocation')} className="input-base w-full px-3 py-3 text-sm" placeholder="e.g. Kinoo Market" />
-                </div>
+              <div>
+                <label className="flex items-start gap-2.5 text-sm cursor-pointer" style={{ color: 'var(--muted-foreground)' }}>
+                  <input
+                    type="checkbox"
+                    {...registerForm.register('acceptTerms', { required: 'You must accept the Privacy Policy and Terms & Conditions' })}
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer"
+                  />
+                  <span>
+                    I agree to the{' '}
+                    <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: 'var(--primary)' }}>Privacy Policy</Link>
+                    {' '}and{' '}
+                    <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: 'var(--primary)' }}>Terms &amp; Conditions</Link>
+                  </span>
+                </label>
+                {registerForm.formState.errors.acceptTerms && <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{registerForm.formState.errors.acceptTerms.message}</p>}
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary flex items-center justify-center gap-2 py-3 text-sm w-full mt-1 disabled:opacity-60">

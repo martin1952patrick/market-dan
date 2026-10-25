@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Shield, Copy, CheckCheck } from 'lucide-react';
 import AppLogo from '@/components/ui/AppLogo';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 
 interface Props {
   onAuth: () => void;
@@ -14,7 +15,7 @@ interface AdminLoginForm {
   password: string;
 }
 
-const ADMIN_CREDS = { email: 'admin@furnimarket.co.ke', password: 'Admin@Furni2026' };
+const ADMIN_CREDS = { email: 'admin@nairobispot.co.ke', password: 'Admin@Nairobi2026' };
 
 export default function AdminAuthGate({ onAuth }: Props) {
   const [showPassword, setShowPassword] = useState(false);
@@ -30,18 +31,32 @@ export default function AdminAuthGate({ onAuth }: Props) {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const onSubmit = (data: AdminLoginForm) => {
+  const onSubmit = async (data: AdminLoginForm) => {
     setLoading(true);
     setError('');
-    // Backend integration: POST /api/admin/auth/login
-    setTimeout(() => {
-      if (data.email === ADMIN_CREDS.email && data.password === ADMIN_CREDS.password) {
-        onAuth();
-      } else {
-        setError('Invalid credentials — use the demo admin account below to sign in');
+    try {
+      const supabase = createClient();
+      const { data: auth, error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (signInError) {
+        setError(signInError.message || 'Invalid admin credentials');
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    }, 900);
+      const role = auth?.user?.app_metadata?.role ?? auth?.user?.user_metadata?.role;
+      if (role !== 'admin') {
+        await supabase.auth.signOut();
+        setError('This account does not have admin access.');
+        setLoading(false);
+        return;
+      }
+      onAuth();
+    } catch (e: any) {
+      setError(e?.message ?? 'Sign in failed. Please try again.');
+    }
+    setLoading(false);
   };
 
   return (
@@ -50,7 +65,7 @@ export default function AdminAuthGate({ onAuth }: Props) {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
             <AppLogo size={40} />
-            <span className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>FurniMarket</span>
+            <span className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>Nairobi Spot</span>
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3" style={{ backgroundColor: 'rgba(194,105,42,0.1)', color: 'var(--primary)' }}>
             <Shield size={13} />
@@ -76,7 +91,7 @@ export default function AdminAuthGate({ onAuth }: Props) {
                 type="email"
                 {...register('email', { required: 'Email is required' })}
                 className="input-base w-full px-3 py-3 text-sm"
-                placeholder="admin@furnimarket.co.ke"
+                placeholder="admin@nairobispot.co.ke"
               />
               {errors.email && <p className="text-xs mt-1.5" style={{ color: '#DC2626' }}>{errors.email.message}</p>}
             </div>
