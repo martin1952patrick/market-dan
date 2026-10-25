@@ -72,9 +72,17 @@ export default function AllListings() {
 
   const filtered = useMemo(() => {
     const results = visibleProfiles?.filter((p) => {
-      const locLower = selectedLocation.toLowerCase();
-      const smallMatch = (p?.smallLocations ?? []).some((s) => s.toLowerCase() === locLower);
-      const locMatch = selectedLocation === 'All' || p?.location === selectedLocation || smallMatch;
+      const locLower = selectedLocation.trim().toLowerCase();
+      const smallMatch = (p?.smallLocations ?? []).some((s) => {
+        const sl = s.trim().toLowerCase();
+        if (!sl) return false;
+        return sl === locLower || sl.includes(locLower) || locLower.includes(sl);
+      });
+      const locMatch =
+        selectedLocation === 'All' ||
+        p?.location === selectedLocation ||
+        (locLower.length >= 3 && p?.location?.toLowerCase()?.includes(locLower)) ||
+        smallMatch;
       const catMatch = selectedCategory === 'All' || p?.categories?.includes(selectedCategory);
       const subCatMatch =
         selectedSubCategory === 'All' ||

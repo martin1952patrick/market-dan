@@ -28,7 +28,7 @@ export default function BlogsPage() {
         {/* Header */}
         <div className="mb-10">
           <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--primary)' }}>
-            FurniMarket Blog
+            Nairobi Spot Blog
           </span>
           <h1 className="text-3xl font-bold mt-1 mb-2" style={{ color: 'var(--foreground)' }}>
             Furniture Guides &amp; Tips

@@ -57,7 +57,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md rounded-2xl border p-8" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-2 mb-6">
           <AppLogo size={32} />
-          <span className="text-xl font-bold" style={{ color: 'var(--primary)' }}>FurniMarket</span>
+          <span className="text-xl font-bold" style={{ color: 'var(--primary)' }}>Nairobi Spot</span>
         </div>
 
         {done ? (

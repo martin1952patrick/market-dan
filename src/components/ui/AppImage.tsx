@@ -30,7 +30,7 @@ interface AppImageProps {
     [key: string]: any;
 }
 
-const WATERMARK_TEXT = 'Nairobi Spot';
+const WATERMARK_TEXT = 'nairobispot.com';
 const WATERMARK_MIN_WIDTH = 200;
 
 const WatermarkOverlay = () => {

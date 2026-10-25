@@ -50,8 +50,14 @@ export interface SellerMessage {
 // DB row <-> ClientProfile (full profile stored in `data` JSONB, key columns mirrored for querying)
 function rowToProfile(row: any): ClientProfile {
   const data = (row?.data ?? {}) as Partial<ClientProfile>;
+  // Legacy sellers have no per-type limits: default to 3 photos + 1 video
+  const photoLimit = data.photoLimit ?? 3;
+  const videoLimit = data.videoLimit ?? 1;
   return {
     ...(data as ClientProfile),
+    photoLimit,
+    videoLimit,
+    uploadLimit: photoLimit + videoLimit,
     id: row.id,
     numericId: row.numeric_id,
     email: row.email,

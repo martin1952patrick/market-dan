@@ -11,7 +11,7 @@ export default function PublicFooter() {
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <AppLogo size={32} />
-              <span className="font-bold text-xl" style={{ color: '#FAF8F5' }}>FurniMarket</span>
+              <span className="font-bold text-xl" style={{ color: '#FAF8F5' }}>Nairobi Spot</span>
             </div>
             <p className="text-sm leading-relaxed mb-4" style={{ color: '#9A8878' }}>
               Nairobi&apos;s local furniture marketplace. Connecting buyers with trusted sellers in your neighbourhood since 2024.
@@ -19,7 +19,7 @@ export default function PublicFooter() {
             <div className="flex flex-col gap-2 text-sm" style={{ color: '#9A8878' }}>
               <span className="flex items-center gap-2"><MapPin size={14} />Nairobi, Kenya</span>
               <span className="flex items-center gap-2"><Phone size={14} />+254 700 000 000</span>
-              <span className="flex items-center gap-2"><Mail size={14} />hello@furnimarket.co.ke</span>
+              <span className="flex items-center gap-2"><Mail size={14} />hello@nairobispot.com</span>
             </div>
           </div>
 
@@ -52,7 +52,7 @@ export default function PublicFooter() {
         </div>
 
         <div className="border-t mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs" style={{ borderColor: '#2D1E14', color: '#6B5648' }}>
-          <span>© 2026 FurniMarket Kenya. All rights reserved.</span>
+          <span>© 2026 Nairobi Spot Kenya. All rights reserved.</span>
           <div className="flex gap-4">
             <Link href="/terms" className="hover:text-amber-400 transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-amber-400 transition-colors">Terms of Service</Link>

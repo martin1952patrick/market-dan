@@ -13,7 +13,7 @@ interface AppLogoProps {
 }
 
 const AppLogo = memo(function AppLogo({
-  src = '/assets/images/app_logo.png',
+  src = '/assets/images/better-1792968923560.png',
   iconName = 'SparklesIcon',
   size = 64,
   className = '',
@@ -33,11 +33,12 @@ const AppLogo = memo(function AppLogo({
       {src ? (
         <AppImage
           src={src}
-          alt="Logo" 
+          alt="Nairobi Spot logo" 
           width={size}
           height={size}
-          className="flex-shrink-0"
+          className="flex-shrink-0 rounded-full object-cover"
           priority={true}
+          watermark={false}
           unoptimized={src.endsWith('.svg')}
         />
       ) : (

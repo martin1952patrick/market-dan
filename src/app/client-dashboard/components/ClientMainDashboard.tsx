@@ -208,7 +208,7 @@ export default function ClientMainDashboard({ userEmail, onLogout }: Props) {
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-2 overflow-hidden">
                 <AppLogo size={28} />
-                <span className="font-bold text-sm truncate" style={{ color: 'var(--primary)' }}>FurniMarket</span>
+                <span className="font-bold text-sm truncate" style={{ color: 'var(--primary)' }}>Nairobi Spot</span>
               </div>
               <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg flex-shrink-0" style={{ color: 'var(--muted-foreground)' }} aria-label="Close sidebar">
                 <X size={16} />

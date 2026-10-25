@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 
-export const WATERMARK_TEXT = 'Nairobi Spot';
+export const WATERMARK_TEXT = 'nairobispot.com';
 
 const WATERMARK_MARK = '__ns_wm__';
 
@@ -89,7 +89,7 @@ export async function loadWatermarkSettings(force = false): Promise<WatermarkSet
 }
 
 /**
- * Bakes a white, semi-transparent "Nairobi Spot" watermark into an image file
+ * Bakes a white, semi-transparent "nairobispot.com" watermark into an image file
  * (using the admin's opacity/position settings) and returns a new File.
  * Non-image files are returned unchanged. Browser only.
  */

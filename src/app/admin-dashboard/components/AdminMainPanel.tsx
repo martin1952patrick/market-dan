@@ -342,7 +342,7 @@ export default function AdminMainPanel({ onLogout }: Props) {
             <div className="flex items-center gap-2 overflow-hidden">
               <AppLogo size={28} />
               <div className="min-w-0">
-                <p className="font-bold text-sm truncate" style={{ color: 'var(--primary)' }}>FurniMarket</p>
+                <p className="font-bold text-sm truncate" style={{ color: 'var(--primary)' }}>Nairobi Spot</p>
                 <p className="text-xs truncate" style={{ color: 'var(--muted-foreground)' }}>Admin Panel</p>
               </div>
             </div>
@@ -393,7 +393,7 @@ export default function AdminMainPanel({ onLogout }: Props) {
             <div className="flex items-center justify-between">
               <div className="min-w-0">
                 <p className="text-xs font-semibold truncate" style={{ color: 'var(--foreground)' }}>Administrator</p>
-                <p className="text-xs truncate" style={{ color: 'var(--muted-foreground)' }}>admin@furnimarket.co.ke</p>
+                <p className="text-xs truncate" style={{ color: 'var(--muted-foreground)' }}>admin@nairobispot.com</p>
               </div>
               <button onClick={onLogout} className="p-1.5 rounded-lg ml-2 transition-colors flex-shrink-0" style={{ color: 'var(--muted-foreground)' }} title="Sign out" aria-label="Sign out">
                 <LogOut size={16} />

@@ -7,12 +7,12 @@ export default function PublicTopbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-800" style={{ backgroundColor: '#000000' }}>
       <div className="max-w-screen-2xl mx-auto px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2" aria-label="Nairobi Spot home">
           <AppLogo size={36} />
           <span className="font-bold text-xl tracking-tight text-white">
-            FurniMarket
+            Nairobi Spot
           </span>
-        </div>
+        </Link>
 
         <nav className="hidden md:flex items-center gap-1">
           <Link

@@ -45,6 +45,7 @@ interface AppContextValue extends AppState {
   toggleHidden: (id: string) => void;
   deleteClient: (id: string) => void;
   setUploadLimit: (id: string, limit: number) => void;
+  setMediaLimits: (id: string | 'all', photos: number, videos: number) => void;
   moveFeaturedUp: (id: string) => void;
   moveFeaturedDown: (id: string) => void;
   addClient: (client: ClientProfile) => void;
@@ -123,7 +124,13 @@ function saveToStorage<T>(key: string, value: T): void {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [clients, setClients] = useState<ClientProfile[]>(() => loadFromStorage('furni_clients', CLIENT_PROFILES));
+  const [clients, setClients] = useState<ClientProfile[]>(() =>
+    loadFromStorage<ClientProfile[]>('furni_clients', CLIENT_PROFILES).map((c) => {
+      const photoLimit = c.photoLimit ?? 3;
+      const videoLimit = c.videoLimit ?? 1;
+      return { ...c, photoLimit, videoLimit, uploadLimit: photoLimit + videoLimit };
+    })
+  );
   const [locations, setLocations] = useState<Location[]>(() => loadFromStorage('furni_locations', LOCATIONS));
   const [divisions, setDivisions] = useState<Division[]>(() => loadFromStorage('furni_divisions', DIVISIONS));
   const [roads, setRoads] = useState<Road[]>(() => loadFromStorage('furni_roads', ROADS));
@@ -236,6 +243,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setUploadLimit = useCallback((id: string, limit: number) => {
     setClients((prev) => prev.map((c) => (c.id === id ? { ...c, uploadLimit: limit } : c)));
+  }, []);
+
+  // Set photo/video limits for one seller, or for every seller (id === 'all')
+  const setMediaLimits = useCallback((id: string | 'all', photos: number, videos: number) => {
+    setClients((prev) =>
+      prev.map((c) =>
+        id === 'all' || c.id === id
+          ? { ...c, photoLimit: photos, videoLimit: videos, uploadLimit: photos + videos }
+          : c
+      )
+    );
+    if (id === 'all') {
+      setSiteSettings((prev) => ({ ...prev, defaultPhotoLimit: photos, defaultVideoLimit: videos }));
+    }
   }, []);
 
   const addClient = useCallback((client: ClientProfile) => {
@@ -503,6 +524,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toggleHidden,
         deleteClient,
         setUploadLimit,
+        setMediaLimits,
         addClient,
         toggleVerified,
         setClientTier,

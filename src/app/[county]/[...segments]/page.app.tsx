@@ -12,17 +12,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonicalUrl = `${baseUrl}/${[county, ...segments].join('/')}`;
 
   return {
-    title: 'Furniture Seller Profile | FurniMarket',
+    title: { absolute: 'Furniture Seller Profile | Nairobi Spot' },
     description:
-      'Discover this furniture seller on FurniMarket. Browse their photos, contact details, and more.',
+      'Discover this furniture seller on Nairobi Spot. Browse their photos, contact details, and more.',
     alternates: { canonical: canonicalUrl },
     openGraph: {
       type: 'profile',
-      title: 'Furniture Seller Profile | FurniMarket',
-      description: 'Discover this furniture seller on FurniMarket.',
+      title: 'Furniture Seller Profile | Nairobi Spot',
+      description: 'Discover this furniture seller on Nairobi Spot.',
       url: canonicalUrl,
-      siteName: 'FurniMarket',
-      images: [{ url: '/assets/images/app_logo.png', width: 1200, height: 630, alt: 'FurniMarket' }],
+      siteName: 'Nairobi Spot',
+      images: [{ url: '/assets/images/better-1792968923560.png', width: 1200, height: 630, alt: 'Nairobi Spot' }],
     },
   };
 }

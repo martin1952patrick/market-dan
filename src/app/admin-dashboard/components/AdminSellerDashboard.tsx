@@ -178,7 +178,7 @@ export default function AdminSellerDashboard({ sellerId, onClose }: Props) {
             {sidebarOpen && (
               <div className="flex items-center gap-2 overflow-hidden">
                 <AppLogo size={28} />
-                <span className="font-bold text-base truncate" style={{ color: 'var(--primary)' }}>FurniMarket</span>
+                <span className="font-bold text-base truncate" style={{ color: 'var(--primary)' }}>Nairobi Spot</span>
               </div>
             )}
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--muted-foreground)' }} aria-label="Toggle sidebar">

@@ -170,7 +170,9 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
         avatarAlt: `${data.name} profile photo`,
         media: [],
-        uploadLimit: 3,
+        uploadLimit: 4,
+        photoLimit: 3,
+        videoLimit: 1,
         status: 'active' as const,
         hidden: false,
         featured: false,
@@ -197,7 +199,7 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
         <div className="relative">
           <div className="flex items-center gap-2 mb-12">
             <AppLogo size={40} />
-            <span className="text-2xl font-bold" style={{ color: '#FAF8F5' }}>FurniMarket</span>
+            <span className="text-2xl font-bold" style={{ color: '#FAF8F5' }}>Nairobi Spot</span>
           </div>
           <h2 className="text-4xl font-bold leading-tight mb-4" style={{ color: '#FAF8F5' }}>
             Grow your furniture<br />business online
@@ -227,7 +229,7 @@ export default function ClientAuthGate({ onAuth }: AuthGateProps) {
         <div className="max-w-md w-full mx-auto">
           <div className="flex items-center gap-2 mb-8 lg:hidden">
             <AppLogo size={32} />
-            <span className="text-xl font-bold" style={{ color: 'var(--primary)' }}>FurniMarket</span>
+            <span className="text-xl font-bold" style={{ color: 'var(--primary)' }}>Nairobi Spot</span>
           </div>
 
           <div className="mb-8">

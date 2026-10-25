@@ -51,6 +51,8 @@ export interface ClientProfile {
   avatarAlt: string;
   media: MediaItem[];
   uploadLimit: number;
+  photoLimit?: number; // max photos for this seller (falls back to site default)
+  videoLimit?: number; // max videos for this seller (falls back to site default)
   status: ProfileStatus;
   hidden: boolean;
   featured: boolean;
@@ -679,12 +681,19 @@ export interface SiteSettings {
   nearbyPlaces: NearbyPlace[];
   microLocations: MicroLocation[];
   compulsoryProductFields?: string[];
+  defaultPhotoLimit?: number; // default photos per seller (3)
+  defaultVideoLimit?: number; // default videos per seller (1)
 }
+
+export const DEFAULT_PHOTO_LIMIT = 3;
+export const DEFAULT_VIDEO_LIMIT = 1;
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteHeading: 'Find Furniture Sellers Near You',
-  metaTitle: 'FurniMarket Kenya — Find Furniture Sellers Near You',
+  metaTitle: 'Nairobi Spot — Find Furniture Sellers Near You',
   compulsoryProductFields: [],
+  defaultPhotoLimit: DEFAULT_PHOTO_LIMIT,
+  defaultVideoLimit: DEFAULT_VIDEO_LIMIT,
   nearbyPlaces: [
   { id: 'np-001', name: 'Dagoretti Corner', locationId: 'loc-karen', description: 'Shopping hub near Karen' },
   { id: 'np-002', name: 'Hardy', locationId: 'loc-karen', description: 'Upmarket area adjacent to Karen' },

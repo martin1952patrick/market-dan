@@ -16,7 +16,7 @@ export default function ListingPreview({ profile }: Props) {
         <div>
           <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>Live Preview</h2>
           <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-            This is exactly how buyers see your listing on the FurniMarket homepage.
+            This is exactly how buyers see your listing on the Nairobi Spot homepage.
           </p>
         </div>
         <Link

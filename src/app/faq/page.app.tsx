@@ -5,7 +5,7 @@ import PublicFooter from '@/components/PublicFooter';
 
 const FAQS = [
   {
-    q: 'How do I list my furniture business on FurniMarket?',
+    q: 'How do I list my furniture business on Nairobi Spot?',
     a: 'Click "List Your Business" in the top navigation, create an account, and fill in your business details including photos, location, and furniture categories. Your listing goes live immediately after saving.',
   },
   {
@@ -22,15 +22,15 @@ const FAQS = [
   },
   {
     q: 'Can I upload photos and videos of my furniture?',
-    a: 'Yes! You can upload up to 10 photos and videos from your dashboard under "Media & Photos". High-quality images attract more buyers.',
+    a: 'Yes! You can upload up to 3 photos and 1 video from your dashboard under "Media & Photos". Need more? Contact support and we can raise your limit to 6 photos and 2 videos.',
   },
   {
     q: 'How do I update my listing information?',
     a: 'Log in to your seller dashboard and click "Edit Profile". Changes are reflected on your public listing immediately after saving.',
   },
   {
-    q: 'What areas does FurniMarket cover?',
-    a: 'FurniMarket currently covers Nairobi, Kiambu, and Kajiado counties, with plans to expand to more counties across Kenya.',
+    q: 'What areas does Nairobi Spot cover?',
+    a: 'Nairobi Spot currently covers Nairobi, Kiambu, and Kajiado counties, with plans to expand to more counties across Kenya.',
   },
   {
     q: 'How do I cancel my subscription?',
@@ -44,7 +44,7 @@ export default function FAQPage() {
       <PublicTopbar />
       <main className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>Frequently Asked Questions</h1>
-        <p className="text-sm mb-10" style={{ color: 'var(--muted-foreground)' }}>Everything you need to know about FurniMarket.</p>
+        <p className="text-sm mb-10" style={{ color: 'var(--muted-foreground)' }}>Everything you need to know about Nairobi Spot.</p>
 
         <div className="flex flex-col gap-6">
           {FAQS?.map((faq, i) => (

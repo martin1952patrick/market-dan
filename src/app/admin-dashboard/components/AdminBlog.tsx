@@ -19,7 +19,7 @@ export default function AdminBlog() {
       title: '',
       excerpt: '',
       content: '',
-      author: 'FurniMarket Editorial',
+      author: 'Nairobi Spot Editorial',
       publishedDate: new Date().toISOString().split('T')[0],
       status: 'draft',
       coverImage: '',

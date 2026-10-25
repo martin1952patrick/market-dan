@@ -40,7 +40,7 @@ export default function AdminSettings() {
   const [localShuffle, setLocalShuffle] = useState(shuffleIntervalMinutes);
   const [localPerPage, setLocalPerPage] = useState(clientsPerPage);
   const [localHeading, setLocalHeading] = useState(siteSettings?.siteHeading ?? 'Find Furniture Sellers Near You');
-  const [localMetaTitle, setLocalMetaTitle] = useState(siteSettings?.metaTitle ?? 'FurniMarket Kenya — Find Furniture Sellers Near You');
+  const [localMetaTitle, setLocalMetaTitle] = useState(siteSettings?.metaTitle ?? 'Nairobi Spot — Find Furniture Sellers Near You');
   const [compulsoryFields, setCompulsoryFields] = useState<Set<string>>(
     new Set(siteSettings?.compulsoryProductFields ?? [])
   );
@@ -59,7 +59,7 @@ export default function AdminSettings() {
     setClientsPerPage(localPerPage);
     updateSiteSettings({
       siteHeading: localHeading?.trim() || 'Find Furniture Sellers Near You',
-      metaTitle: localMetaTitle?.trim() || 'FurniMarket Kenya',
+      metaTitle: localMetaTitle?.trim() || 'Nairobi Spot',
     });
     setCompulsoryProductFields(Array.from(compulsoryFields));
     toast?.success('Settings saved — changes are live across the site');
@@ -123,7 +123,7 @@ export default function AdminSettings() {
                 type="text"
                 value={localMetaTitle}
                 onChange={(e) => setLocalMetaTitle(e?.target?.value)}
-                placeholder="FurniMarket Kenya — Find Furniture Sellers Near You"
+                placeholder="Nairobi Spot — Find Furniture Sellers Near You"
                 className="input-base w-full px-3 py-2.5 text-sm"
               />
               <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>Shown in the browser tab and used by search engines. Keep under 60 characters for best SEO.</p>
